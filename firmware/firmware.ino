@@ -7,10 +7,13 @@
 #define SHARP_TOLERANCE_PERCENT 93
 #define SHARP_MODEL_GP2Y0A21Y 1080
 
-#define IR_LEFT        A1
-#define IR_RIGHT       A0
-#define IR_FRONT_LEFT  A2
-#define IR_FRONT_RIGHT A3
+#define IR_LEFT             A1
+#define IR_RIGHT            A0
+#define IR_FRONT_LEFT       A2
+#define IR_FRONT_RIGHT      A3
+
+#define STEERING_PWM_PIN    9
+#define DRIVE_PWM_PIN       11
 
 int m_distance_left = 0;
 int m_distance_right = 0;
@@ -48,6 +51,20 @@ void setup() {
 }
 
 void loop() {
+    while (Serial.available() > 0) {
+        m_rx_len = hdlc.decode(Serial.read());
+
+        // check if HDLC packet is received
+        if (m_rx_len > 0) {
+            uint8_t header = ((uint8_t*)m_rx_buffer)[0];
+
+            if (CB_MOTOR_COMMAND == header) {
+                cb_motor_command_packet_t* motor = (cb_motor_command_packet_t*)m_rx_buffer;
+                analogWrite(STEERING_PWM_PIN, motor->steering_pwm);
+                analogWrite(DRIVE_PWM_PIN, motor->drive_pwm);
+            }
+        }
+    }
 
     m_distance_left = sharp_left.distance();
     m_distance_right = sharp_right.distance();

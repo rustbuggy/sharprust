@@ -4,8 +4,6 @@
 #include "Communication.h"
 #include "Hdlc.h"
 
-#define SHARP_MODEL_GP2Y0A21Y 1080
-
 #define IR_LEFT             A1
 #define IR_RIGHT            A0
 #define IR_FRONT_LEFT       A2
@@ -19,10 +17,10 @@ int m_distance_right = 0;
 int m_distance_front_left = 0;
 int m_distance_front_right = 0;
 
-SharpIR sharp_left(IR_LEFT, SHARP_MODEL_GP2Y0A21Y);
-SharpIR sharp_right(IR_RIGHT, SHARP_MODEL_GP2Y0A21Y);
-SharpIR sharp_front_left(IR_FRONT_LEFT, SHARP_MODEL_GP2Y0A21Y);
-SharpIR sharp_front_right(IR_FRONT_RIGHT, SHARP_MODEL_GP2Y0A21Y);
+IRSharp sharp_left(IR_LEFT);
+IRSharp sharp_right(IR_RIGHT);
+IRSharp sharp_front_left(IR_FRONT_LEFT);
+IRSharp sharp_front_right(IR_FRONT_RIGHT);
 
 uint8_t m_rx_buffer[40];
 uint8_t m_rx_len = 0;

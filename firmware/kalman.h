@@ -3,8 +3,7 @@
 #ifndef __KALMAN__H
 #define __KALMAN__H
 
-typedef long int int32_t;
-typedef int32_t fx24_8_t;
+#include "types.h"
 
 #define FIXED_BITS        32
 #define FIXED_WBITS       24

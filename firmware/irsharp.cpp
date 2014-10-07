@@ -1,5 +1,6 @@
 #include "Arduino.h"
 #include "IRSharp.h"
+#include "lookups.h"
 
 IRSharp::IRSharp(int irPin) : dist(40, 10, 5, 5), irPin(irPin)
 {
@@ -9,6 +10,6 @@ IRSharp::IRSharp(int irPin) : dist(40, 10, 5, 5), irPin(irPin)
 // GP2Y0A21Y
 int IRSharp::distance()
 {
-  return dist.stepKalman(irLookup[analogRead(_irPin)]);
+  return dist.stepKalman(irLookup[analogRead(irPin)]);
 }
 

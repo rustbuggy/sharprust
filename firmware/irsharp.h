@@ -7,7 +7,7 @@
 class IRSharp
 {
 public:
-  IRSharp (int irPin, int sensorModel);
+  IRSharp (int irPin);
   int distance();
 
 private:

@@ -1,7 +1,14 @@
+// Idea from: http://pengu.student.utwente.nl/wordpress/?p=116
+
 #include "kalman.h"
 
 // Single variable Kalman filter
-SingleKalmanVar::SingleKalmanVar(KALMAN_TYPE x, KALMAN_TYPE P, KALMAN_TYPE Sz, KALMAN_TYPE Sw)
+SingleKalmanVar::SingleKalmanVar(fx24_8_t x, fx24_8_t P, fx24_8_t Sz, fx24_8_t Sw)
+{
+  reset(x, P, Sz, Sw);
+}
+
+void SingleKalmanVar::reset(fx24_8_t x, fx24_8_t P, fx24_8_t Sz, fx24_8_t Sw)
 {
   this->x = x; // variable estimate
   this->P = P; // error (variance) estimate
@@ -9,19 +16,19 @@ SingleKalmanVar::SingleKalmanVar(KALMAN_TYPE x, KALMAN_TYPE P, KALMAN_TYPE Sz, K
   this->Sw = Sw; // R measurement variance
 }
 
-KALMAN_TYPE SingleKalmanVar::stepKalman(KALMAN_TYPE measurement)
+int32_t SingleKalmanVar::stepKalman(int32_t measurement)
 {
-  KALMAN_TYPE P_temp, K, x_temp;
+  fx24_8_t P_temp, x_temp, K;
 
   // predict
   x_temp = x;
   P_temp = P + Sw;
 
   // update
-  K = (1 / (P_temp + Sz)) * P_temp;
-  x = x_temp + K * (measurement - x_temp);
-  P = (1 - K) * P_temp;
+  K = FIXED_Div(P_temp, P_temp + Sz);
+  x = x_temp + FIXED_Mul(K, FIXED_FROM_INT(measurement) - x_temp);
+  P = FIXED_Mul(FIXED_ONE - K, P_temp);
   
-  return x;
+  return FIXED_TO_INT(x);
 }
 

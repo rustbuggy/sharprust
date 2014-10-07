@@ -1,6 +1,6 @@
 #include <Servo.h>
 
-#include "SharpIR.h"
+#include "irsharp.h"
 #include "Communication.h"
 #include "Hdlc.h"
 

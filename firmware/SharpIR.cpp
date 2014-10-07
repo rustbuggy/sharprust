@@ -4,7 +4,7 @@
  * Copyright 2014 Dr. Marcal Casas-Cartagena (marcal.casas@gmail.com)                                       *
  * Last update: 07.01.2014                                                                                  *
  ************************************************************************************************************
- * 
+ *
  ************************************************************************************************************
  * This library is free software; you can redistribute it and/or                                            *
  * modify it under the terms of the GNU Lesser General Public                                               *
@@ -39,18 +39,6 @@
 
 #include "Arduino.h"
 #include "SharpIR.h"
-
-/*
-SharpIR::SharpIR(int irPin, int avg, int tolerance, int sensorModel)
-{
-  _irPin = irPin;
-  _avg = avg;
-  _tol = tolerance / 100;
-  _model = sensorModel;
-
-  analogReference(DEFAULT);
-}
-*/
 
 SharpIR::SharpIR(int irPin, int sensorModel) : dist(40, 10, 5, 5)
 {
@@ -92,25 +80,5 @@ int SharpIR::cm()
 int SharpIR::distance()
 {
   return dist.stepKalman(cm());
-  /*
-  _p = 0;
-  _sum = 0;
-
-  for (int i = 0; i < _avg; i++)
-  {
-    int foo = cm();
-
-    if (foo >= (_tol * _previousDistance))
-    {
-      _previousDistance = foo;
-      _sum = _sum + foo;
-      _p++;
-    }
-  }
-
-  int accurateDistance = _sum/_p;
-
-  return accurateDistance;
-  */
 }
 

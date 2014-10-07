@@ -3,7 +3,7 @@
  * Distance sensors                                                                                         *
  * Copyright 2014 Dr. Marcal Casas-Cartagena (marcal.casas@gmail.com)                                       *
  ************************************************************************************************************
-
+ * 
  ************************************************************************************************************
  * This library is free software; you can redistribute it and/or                                            *
  * modify it under the terms of the GNU Lesser General Public                                               *
@@ -24,26 +24,30 @@
 #define SharpIR_h
 
 #include "Arduino.h"
+#include "kalman.h"
 
 class SharpIR
 {
-  public:
-    SharpIR (int irPin, int avg, int tolerance, int sensorModel);
-    int distance();
-    
-    
-  private:
-    
-    int cm();
-    
-    int _irPin;
-    int _model;
-    int _avg;
-    int _p;
-    int _sum;
-    int _previousDistance;
-    int _tol;
-    
+public:
+  //SharpIR (int irPin, int avg, int tolerance, int sensorModel);
+  SharpIR (int irPin, int sensorModel);
+  int distance();
+
+private:
+  int cm();
+
+  int _irPin;
+  int _model;
+
+  SingleKalmanVar dist;
+  /*
+  int _avg;
+  int _p;
+  int _sum;
+  int _previousDistance;
+  int _tol;
+  */
 };
 
-#endif
+#endif // SharpIR_h
+

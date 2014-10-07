@@ -4,7 +4,7 @@
  * Copyright 2014 Dr. Marcal Casas-Cartagena (marcal.casas@gmail.com)                                       *
  * Last update: 07.01.2014                                                                                  *
  ************************************************************************************************************
- 
+ * 
  ************************************************************************************************************
  * This library is free software; you can redistribute it and/or                                            *
  * modify it under the terms of the GNU Lesser General Public                                               *
@@ -21,8 +21,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA                               *
  ***********************************************************************************************************/
 
-
-// The Sahrp IR sensors are cheap but somehow unreliable. I've found that when doing continous readings to a
+// The Sharp IR sensors are cheap but somehow unreliable. I've found that when doing continous readings to a
 // fix object, the distance given oscilates quite a bit from time to time. For example I had an object at
 // 31 cm. The readings from the sensor were mainly steady at the correct distance but eventually the distance
 // given dropped down to 25 cm or even 16 cm. That's quite a bit and for some applications it is quite
@@ -38,23 +37,28 @@
 // This library has the formulas to work with the GP2Y0A21Y and the GP2Y0A02YK sensors but exanding it for
 // other sensors is easy enough.
 
-
 #include "Arduino.h"
 #include "SharpIR.h"
 
+/*
+SharpIR::SharpIR(int irPin, int avg, int tolerance, int sensorModel)
+{
+  _irPin = irPin;
+  _avg = avg;
+  _tol = tolerance / 100;
+  _model = sensorModel;
 
-
-SharpIR::SharpIR(int irPin, int avg, int tolerance, int sensorModel) {
-  
-    _irPin=irPin;
-    _avg=avg;
-    _tol=tolerance/100;
-    _model=sensorModel;
-    
-    analogReference(DEFAULT);
- 
+  analogReference(DEFAULT);
 }
+*/
 
+SharpIR::SharpIR(int irPin, int sensorModel) : dist(40, 10, 5, 5)
+{
+  _irPin = irPin;
+  _model = sensorModel;
+
+  analogReference(DEFAULT);
+}
 
 // When you initialize the library object on your sketch you have to pass all the above parameters:
 
@@ -66,63 +70,47 @@ SharpIR::SharpIR(int irPin, int avg, int tolerance, int sensorModel) {
 // sensorModel is a int to differentiate the two sensor models this library currently supports:
 //    1080 is the int for the GP2Y0A21Y and 20150 is the int for GP2Y0A02YK. The numbers reflect the
 //    distance range they are designed for (in cm)
- 
+int SharpIR::cm()
+{
+  int raw = analogRead(_irPin);
+  float voltFromRaw = map(raw, 0, 1023, 0, 5000);
 
+  int puntualDistance;
 
+  if (_model == 1080)
+  {
+    puntualDistance = 27.728 * pow(voltFromRaw * 0.001f, -1.2045);
+  }
+  else if (_model == 20150)
+  {
+    puntualDistance = 61.573 * pow(voltFromRaw * 0.001f, -1.1068);
+  }
 
-int SharpIR::cm() {
-    
-    int raw=analogRead(_irPin);
-    float voltFromRaw=map(raw, 0, 1023, 0, 5000);
-    
-    int puntualDistance;
-    
-    if (_model==1080) {
-        
-        puntualDistance=27.728*pow(voltFromRaw/1000, -1.2045);
-        
-    }else if (_model==20150){
-    
-        puntualDistance=61.573*pow(voltFromRaw/1000, -1.1068);
-        
-    }
-    
-    
-    return puntualDistance;
-
-
+  return puntualDistance;
 }
 
+int SharpIR::distance()
+{
+  return dist.stepKalman(cm());
+  /*
+  _p = 0;
+  _sum = 0;
 
+  for (int i = 0; i < _avg; i++)
+  {
+    int foo = cm();
 
-int SharpIR::distance() {
-
-    _p=0;
-    _sum=0;
-
-    
-    for (int i=0; i<_avg; i++){
-        
-        int foo=cm();
-        
-        if (foo>=(_tol*_previousDistance)){
-        
-            _previousDistance=foo;
-            _sum=_sum+foo;
-            _p++;
-            
-        }
-        
-        
+    if (foo >= (_tol * _previousDistance))
+    {
+      _previousDistance = foo;
+      _sum = _sum + foo;
+      _p++;
     }
+  }
 
-    
-    int accurateDistance=_sum/_p;
-    
-    return accurateDistance;
+  int accurateDistance = _sum/_p;
 
+  return accurateDistance;
+  */
 }
-
-
-
 

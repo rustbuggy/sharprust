@@ -1,3 +1,4 @@
+#include <Servo.h>
 
 #include "SharpIR.h"
 #include "Communication.h"
@@ -34,6 +35,8 @@ uint8_t m_tx_buffer[40];
 uint8_t m_tx_len = 0;
 HDLC hdlc(m_rx_buffer, 40);
 
+Servo steeringservo;
+
 void send_telemetry(uint8_t left, uint8_t right, uint8_t front_left, uint8_t front_right) {
     bc_telemetry_packet_t bc_telemetry;
     bc_telemetry.header = BC_TELEMETRY;
@@ -52,6 +55,8 @@ void setup() {
     pinMode(IR_RIGHT, INPUT);
     pinMode(IR_FRONT_LEFT, INPUT);
     pinMode(IR_FRONT_RIGHT, INPUT);
+
+    steeringservo.attach(STEERING_PWM_PIN);
 }
 
 void loop() {
@@ -64,7 +69,8 @@ void loop() {
 
             if (CB_MOTOR_COMMAND == header) {
                 cb_motor_command_packet_t* motor = (cb_motor_command_packet_t*)m_rx_buffer;
-                analogWrite(STEERING_PWM_PIN, motor->steering_pwm);
+                //analogWrite(STEERING_PWM_PIN, motor->steering_pwm);
+                steeringservo.write(motor->steering_pwm);
                 analogWrite(DRIVE_PWM_PIN, motor->drive_pwm);
             }
         }

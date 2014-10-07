@@ -4,8 +4,6 @@
 #include "Communication.h"
 #include "Hdlc.h"
 
-#define SHARP_READINGS 5 // takes 3 ms for .distace call, with 25 takes 13 ms
-#define SHARP_TOLERANCE_PERCENT 93
 #define SHARP_MODEL_GP2Y0A21Y 1080
 
 #define IR_LEFT             A1
@@ -20,10 +18,7 @@ int m_distance_left = 0;
 int m_distance_right = 0;
 int m_distance_front_left = 0;
 int m_distance_front_right = 0;
-//SharpIR sharp_left(IR_LEFT, SHARP_READINGS, SHARP_TOLERANCE_PERCENT, SHARP_MODEL_GP2Y0A21Y);
-//SharpIR sharp_right(IR_RIGHT, SHARP_READINGS, SHARP_TOLERANCE_PERCENT, SHARP_MODEL_GP2Y0A21Y);
-//SharpIR sharp_front_left(IR_FRONT_LEFT, SHARP_READINGS, SHARP_TOLERANCE_PERCENT, SHARP_MODEL_GP2Y0A21Y);
-//SharpIR sharp_front_right(IR_FRONT_RIGHT, SHARP_READINGS, SHARP_TOLERANCE_PERCENT, SHARP_MODEL_GP2Y0A21Y);
+
 SharpIR sharp_left(IR_LEFT, SHARP_MODEL_GP2Y0A21Y);
 SharpIR sharp_right(IR_RIGHT, SHARP_MODEL_GP2Y0A21Y);
 SharpIR sharp_front_left(IR_FRONT_LEFT, SHARP_MODEL_GP2Y0A21Y);

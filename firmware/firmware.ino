@@ -76,6 +76,27 @@ void loop() {
 
     send_telemetry(m_distance_left, m_distance_right, m_distance_front_left, m_distance_front_right);
 
+    // Steering
+    int rawSteer = 90 + ((m_distance_right - m_distance_left) >> 1);
+    //int rawSteer = 140 - m_distance_left;
+    uint8_t steeringPWM;
+    if (rawSteer > 140)
+    {
+      steeringPWM = 140;
+    }
+    else if (rawSteer < 40)
+    {
+      steeringPWM = 40;
+    }
+    else
+    {
+      steeringPWM = rawSteer;
+    }
+    //analogWrite(STEERING_PWM_PIN, steeringPWM);
+    steeringservo.write(steeringPWM);
+
+    delay(30);
+
     //Serial.print("left: ");
     //Serial.println(m_distance_left);
 }

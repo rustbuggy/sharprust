@@ -2,7 +2,7 @@
 #include "IRSharp.h"
 #include "lookups.h"
 
-IRSharp::IRSharp(int irPin) : dist(40, 10, 0.1, 1), irPin(irPin)
+IRSharp::IRSharp(int irPin) : dist(40, 10, 1, 5), irPin(irPin)
 {
   analogReference(DEFAULT);
 }

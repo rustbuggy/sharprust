@@ -5,13 +5,6 @@
 
 #include "types.h"
 
-#define FIXED_BITS        32
-#define FIXED_WBITS       24
-#define FIXED_FBITS       8
-#define FIXED_TO_INT(a)   ( (int32_t)(a >> FIXED_FBITS))
-#define FIXED_FROM_INT(a) ((fx24_8_t)(a << FIXED_FBITS))
-#define FIXED_ONE         ((fx24_8_t)(1 << FIXED_FBITS))
-
 class SingleKalmanVar
 {
 private:
@@ -20,19 +13,9 @@ private:
   fx24_8_t Sz; // Q
   fx24_8_t Sw; // R
 
-  inline fx24_8_t FIXED_Mul(fx24_8_t x, fx24_8_t y)
-  {
-    return (x * y) >> FIXED_FBITS;
-  }
-
-  inline fx24_8_t FIXED_Div(fx24_8_t x, fx24_8_t y)
-  {
-    return (x << FIXED_FBITS) / y;
-  }
-
 public:
-  SingleKalmanVar(fx24_8_t x, fx24_8_t P, fx24_8_t Sz, fx24_8_t Sw);
-  void reset(fx24_8_t x, fx24_8_t P, fx24_8_t Sz, fx24_8_t Sw);
+  SingleKalmanVar(int32_t x, int32_t P, int32_t Sz, int32_t Sw);
+  void reset(int32_t x, int32_t P, int32_t Sz, int32_t Sw);
   int32_t stepKalman(int32_t measurement);
 };
 

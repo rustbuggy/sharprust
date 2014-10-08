@@ -3,17 +3,17 @@
 #include "kalman.h"
 
 // Single variable Kalman filter
-SingleKalmanVar::SingleKalmanVar(fx24_8_t x, fx24_8_t P, fx24_8_t Sz, fx24_8_t Sw)
+SingleKalmanVar::SingleKalmanVar(int32_t x, int32_t P, int32_t Sz, int32_t Sw)
 {
   reset(x, P, Sz, Sw);
 }
 
-void SingleKalmanVar::reset(fx24_8_t x, fx24_8_t P, fx24_8_t Sz, fx24_8_t Sw)
+void SingleKalmanVar::reset(int32_t x, int32_t P, int32_t Sz, int32_t Sw)
 {
-  this->x = x; // variable estimate
-  this->P = P; // error (variance) estimate
-  this->Sz = Sz; // Q process variance
-  this->Sw = Sw; // R measurement variance
+  this->x = FIXED_FROM_INT(x); // variable estimate
+  this->P = FIXED_FROM_INT(P); // error (variance) estimate
+  this->Sz = FIXED_FROM_INT(Sz); // Q process variance
+  this->Sw = FIXED_FROM_INT(Sw); // R measurement variance
 }
 
 int32_t SingleKalmanVar::stepKalman(int32_t measurement)

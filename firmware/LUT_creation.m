@@ -7,12 +7,16 @@ clc
 % Sharp IR sensor 10..80 cm
 lookup = zeros(1,1024);
 for i = 1:1024
-    if i > 64
+    if i > 80
         voltFromRaw = (i - 1) * (4999 / 1023) + 1;
         cm = 27.728 * ((voltFromRaw / 1000) ^ (-1.2045));
+        %if ((cm < 6) || (cm > 80))
+        %    lookup(1,i) = 100; % to integer
+        %else
         lookup(1,i) = fix(cm); % to integer
+        %end
     else
-        lookup(1,i) = 0;
+        lookup(1,i) = fix(0.0375 * (i-1));
     end
 end
 

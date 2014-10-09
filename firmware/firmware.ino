@@ -3,6 +3,7 @@
 #include "irsharp.h"
 #include "Communication.h"
 #include "Hdlc.h"
+#include "mcdriver.h"
 
 #define IR_LEFT             A1
 #define IR_RIGHT            A0
@@ -12,10 +13,7 @@
 #define STEERING_PWM_PIN    9
 #define DRIVE_PWM_PIN       11
 
-int m_distance_left = 0;
-int m_distance_right = 0;
-int m_distance_front_left = 0;
-int m_distance_front_right = 0;
+bc_telemetry_packet_t telemetry;
 
 IRSharp sharp_left(IR_LEFT);
 IRSharp sharp_right(IR_RIGHT);
@@ -30,73 +28,71 @@ HDLC hdlc(m_rx_buffer, 40);
 
 Servo steeringservo;
 
-void send_telemetry(uint8_t left, uint8_t right, uint8_t front_left, uint8_t front_right) {
-    bc_telemetry_packet_t bc_telemetry;
-    bc_telemetry.header = BC_TELEMETRY;
-    bc_telemetry.ir_left = left;
-    bc_telemetry.ir_right = right;
-    bc_telemetry.ir_front_left = front_left;
-    bc_telemetry.ir_front_right = front_right;
+bool stop = true;
 
-    m_tx_len = hdlc.encode((uint8_t*)&bc_telemetry, sizeof(bc_telemetry_packet_t), m_tx_buffer);
-    Serial.write(m_tx_buffer, m_tx_len);
+MCDriver driver;
+
+void send_telemetry() {
+  m_tx_len = hdlc.encode((uint8_t*)&telemetry, sizeof(bc_telemetry_packet_t), m_tx_buffer);
+  Serial.write(m_tx_buffer, m_tx_len);
 }
 
 void setup() {
-    Serial.begin(57600);
-    pinMode(IR_LEFT, INPUT);
-    pinMode(IR_RIGHT, INPUT);
-    pinMode(IR_FRONT_LEFT, INPUT);
-    pinMode(IR_FRONT_RIGHT, INPUT);
+  Serial.begin(57600);
 
-    steeringservo.attach(STEERING_PWM_PIN);
+  steeringservo.attach(STEERING_PWM_PIN);
+
+  analogReference(DEFAULT);
+
+  telemetry.header = BC_TELEMETRY;
 }
 
 void loop() {
-    while (Serial.available() > 0) {
-        m_rx_len = hdlc.decode(Serial.read());
+  while (Serial.available() > 0)
+  {
+    m_rx_len = hdlc.decode(Serial.read());
 
-        // check if HDLC packet is received
-        if (m_rx_len > 0) {
-            uint8_t header = ((uint8_t*)m_rx_buffer)[0];
-
-            if (CB_MOTOR_COMMAND == header) {
-                cb_motor_command_packet_t* motor = (cb_motor_command_packet_t*)m_rx_buffer;
-                //analogWrite(STEERING_PWM_PIN, motor->steering_pwm);
-                steeringservo.write(motor->steering_pwm);
-                analogWrite(DRIVE_PWM_PIN, motor->drive_pwm);
-            }
-        }
-    }
-
-    m_distance_left = sharp_left.distance();
-    m_distance_right = sharp_right.distance();
-    m_distance_front_left = sharp_front_left.distance();
-    m_distance_front_right = sharp_front_right.distance();
-
-    send_telemetry(m_distance_left, m_distance_right, m_distance_front_left, m_distance_front_right);
-
-    // Steering
-    int rawSteer = 90 + ((m_distance_right - m_distance_left) >> 1);
-    //int rawSteer = 140 - m_distance_left;
-    uint8_t steeringPWM;
-    if (rawSteer > 140)
+    // check if HDLC packet is received
+    if (m_rx_len > 0)
     {
-      steeringPWM = 140;
-    }
-    else if (rawSteer < 40)
-    {
-      steeringPWM = 40;
-    }
-    else
-    {
-      steeringPWM = rawSteer;
-    }
-    //analogWrite(STEERING_PWM_PIN, steeringPWM);
-    steeringservo.write(steeringPWM);
+      uint8_t header = ((uint8_t*)m_rx_buffer)[0];
 
-    delay(30);
+      if (CB_MOTOR_COMMAND == header)
+      {
+        cb_motor_command_packet_t* motor = (cb_motor_command_packet_t*)m_rx_buffer;
+        analogWrite(STEERING_PWM_PIN, motor->steering_pwm);
+        //steeringservo.write(motor->steering_pwm);
+        analogWrite(DRIVE_PWM_PIN, motor->drive_pwm);
+        stop = motor->steering_pwm == 90 && motor->drive_pwm == 190;
+      }
+    }
+  }
 
-    //Serial.print("left: ");
-    //Serial.println(m_distance_left);
+  telemetry.ir_left = sharp_left.distance();
+  telemetry.ir_left_ewma = FIXED_TO_INT(sharp_left.ewma);
+  telemetry.ir_right = sharp_right.distance();
+  telemetry.ir_front_left = sharp_front_left.distance();
+  telemetry.ir_front_right = sharp_front_right.distance();
+
+  if (!stop)
+  {
+    drive_cmd_t& driveCmd = driver.drive(telemetry);
+    if (driveCmd.changeSteering)
+    {
+      analogWrite(STEERING_PWM_PIN, driveCmd.steeringPwm);
+    }
+    if (driveCmd.changeDriving)
+    {
+      analogWrite(DRIVE_PWM_PIN, driveCmd.drivingPwm);
+    }
+  }
+
+  send_telemetry();
+
+  delay(10);
+
+  //Serial.print("left: ");
+  //Serial.println(m_distance_left);
 }
+
+

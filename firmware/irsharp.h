@@ -9,6 +9,7 @@ class IRSharp
 public:
   IRSharp (int irPin);
   int distance();
+  fx24_8_t ewma;
 
 private:
   int irPin;

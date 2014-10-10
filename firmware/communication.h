@@ -1,10 +1,10 @@
-
 #ifndef __COMMUNICAYION__H
 #define __COMMUNICAYION__H
 
+#include "types.h"
+
 // bc means from Buggy to Computer
 // cb means from Computer tp Buggy
-
 enum {
 	BC_TELEMETRY = 0x00,
 
@@ -13,13 +13,14 @@ enum {
 
 typedef struct bc_telemetry_packet_t {
 	uint8_t header; // BC_TELEMETRY
-	uint8_t ir_left;
-	uint8_t ir_left_ewma;
-	uint8_t ir_right;
-	uint8_t ir_front_left;
-	uint8_t ir_front_right;
-        int32_t mc_x;
-        int32_t mc_y;
+	fixed_t ir_left;
+	fixed_t ir_right;
+	fixed_t ir_front_left;
+	fixed_t ir_front_right;
+        fixed_t mc_x;
+        fixed_t mc_y;
+        fixed_t mc_dist;
+        fixed_t mc_angle;
 
         bool changeSteering;
         int32_t steeringPwm;

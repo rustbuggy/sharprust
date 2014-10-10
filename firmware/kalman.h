@@ -8,15 +8,15 @@
 class SingleKalmanVar
 {
 private:
-  fx24_8_t Sz; // Q
-  fx24_8_t Sw; // R
-  fx24_8_t P;
+  fixed_t Sz; // Q
+  fixed_t Sw; // R
+  fixed_t P;
+  fixed_t x;
 
 public:
-  fx24_8_t x;
-  SingleKalmanVar(int32_t x, int32_t P, int32_t Sz, int32_t Sw);
-  void reset(int32_t x, int32_t P, int32_t Sz, int32_t Sw);
-  int32_t stepKalman(int32_t measurement);
+  SingleKalmanVar(fixed_t x, fixed_t P, fixed_t Sz, fixed_t Sw);
+  void reset(fixed_t x, fixed_t P, fixed_t Sz, fixed_t Sw);
+  fixed_t stepKalman(fixed_t measurement);
 };
 
 #endif // __KALMAN__H

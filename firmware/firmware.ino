@@ -20,13 +20,14 @@ IRSharp sharp_right(IR_RIGHT);
 IRSharp sharp_front_left(IR_FRONT_LEFT);
 IRSharp sharp_front_right(IR_FRONT_RIGHT);
 
-uint8_t m_rx_buffer[40];
+uint8_t m_rx_buffer[64];
 uint8_t m_rx_len = 0;
-uint8_t m_tx_buffer[40];
+uint8_t m_tx_buffer[64];
 uint8_t m_tx_len = 0;
-HDLC hdlc(m_rx_buffer, 40);
+HDLC hdlc(m_rx_buffer, 64);
 
 Servo steeringservo;
+Servo drivingservo;
 
 bool stop = true;
 
@@ -41,6 +42,7 @@ void setup() {
   Serial.begin(57600);
 
   steeringservo.attach(STEERING_PWM_PIN);
+  drivingservo.attach(DRIVE_PWM_PIN);
 
   analogReference(DEFAULT);
 
@@ -60,30 +62,30 @@ void loop() {
       if (CB_MOTOR_COMMAND == header)
       {
         cb_motor_command_packet_t* motor = (cb_motor_command_packet_t*)m_rx_buffer;
-        analogWrite(STEERING_PWM_PIN, motor->steering_pwm);
-        //steeringservo.write(motor->steering_pwm);
-        analogWrite(DRIVE_PWM_PIN, motor->drive_pwm);
-        stop = motor->steering_pwm == 90 && motor->drive_pwm == 190;
+        //analogWrite(STEERING_PWM_PIN, motor->steering_pwm);
+        //analogWrite(DRIVE_PWM_PIN, motor->drive_pwm);
+        steeringservo.write(motor->steering_pwm);
+        drivingservo.write(motor->drive_pwm);
+        stop = motor->steering_pwm == 90 && motor->drive_pwm == 92;
       }
     }
   }
 
-  telemetry.ir_left = sharp_left.distance();
-  telemetry.ir_left_ewma = FIXED_TO_INT(sharp_left.ewma);
+  telemetry.ir_left = sharp_left.distance(); //FIXED_Mul(FIXED_FROM_DOUBLE(-6.73), FIXED_FROM_DOUBLE(-6.73));//
   telemetry.ir_right = sharp_right.distance();
   telemetry.ir_front_left = sharp_front_left.distance();
   telemetry.ir_front_right = sharp_front_right.distance();
 
+  drive_cmd_t& driveCmd = driver.drive(telemetry);
   if (!stop)
   {
-    drive_cmd_t& driveCmd = driver.drive(telemetry);
     if (driveCmd.changeSteering)
     {
-      analogWrite(STEERING_PWM_PIN, driveCmd.steeringPwm);
+      steeringservo.write(driveCmd.steeringPwm);
     }
     if (driveCmd.changeDriving)
     {
-      analogWrite(DRIVE_PWM_PIN, driveCmd.drivingPwm);
+      drivingservo.write(driveCmd.drivingPwm);
     }
   }
 

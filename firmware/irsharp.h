@@ -8,8 +8,7 @@ class IRSharp
 {
 public:
   IRSharp (int irPin);
-  int distance();
-  fx24_8_t ewma;
+  fixed_t distance();
 
 private:
   int irPin;

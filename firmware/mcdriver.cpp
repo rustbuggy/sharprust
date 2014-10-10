@@ -1,6 +1,6 @@
 #include "mcdriver.h"
 
-static const fx24_8_t VAL_SQRT_1_DIV_2 = 181;
+#include "math.h"
 
 MCDriver::MCDriver()
 {
@@ -18,72 +18,69 @@ void MCDriver::clampSteeringAndSpeed()
   {
     driveCmd.steeringPwm = 140;
   }
-  else if (driveCmd.steeringPwm < 40)
+  else if (driveCmd.steeringPwm < 50)
   {
-    driveCmd.steeringPwm = 40;
+    driveCmd.steeringPwm = 50;
   }
 
   // Speed
-  if (driveCmd.drivingPwm > 255)
+  if (driveCmd.drivingPwm > 110)
   {
-    driveCmd.drivingPwm = 255;
+    driveCmd.drivingPwm = 110;
   }
-  else if (driveCmd.drivingPwm < 135)
+  else if (driveCmd.drivingPwm < 80)
   {
-    driveCmd.drivingPwm = 135;
+    driveCmd.drivingPwm = 80;
   }
 }
 
 drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry)
 {
-  /*
-   // Mass center calculation
-   fx24_8_t a1 = FIXED_Mul(VAL_SQRT_1_DIV_2, FIXED_FROM_INT(telemetry.ir_front_right));
-   fx24_8_t a2 = FIXED_Mul(VAL_SQRT_1_DIV_2, FIXED_FROM_INT(telemetry.ir_front_left));
-   fx24_8_t a3 = FIXED_FROM_INT(telemetry.ir_right);
-   fx24_8_t a4 = FIXED_FROM_INT(telemetry.ir_left);
-   
-   fx24_8_t mc_x = FIXED_Mul(a1 + a3 - a2 - a4, VAL_1_DIV_4);
-   fx24_8_t mc_y = FIXED_Mul(a1 + a2, VAL_1_DIV_4);
-   */
-
-  int32_t a1 = FIXED_TO_INT(FIXED_Mul(VAL_SQRT_1_DIV_2, FIXED_FROM_INT(telemetry.ir_front_right)));
-  int32_t a2 = FIXED_TO_INT(FIXED_Mul(VAL_SQRT_1_DIV_2, FIXED_FROM_INT(telemetry.ir_front_left)));
-  int32_t a3 = telemetry.ir_right;
-  int32_t a4 = telemetry.ir_left;
-
-  int32_t max_x_neg = a2 < a4 ? a2 : a4;
-  int32_t min_x_pos = a1 < a3 ? a1 : a3;
-  int32_t min_y_pos = a1 < a2 ? a1 : a2;
-
-  int32_t new_mc_x = (min_x_pos - max_x_neg) / 2;
-  int32_t new_mc_y = min_y_pos / 2;
+  // Mass center calculation
+  fixed_t a1 = FIXED_Mul(VAL_SQRT_1_DIV_2, telemetry.ir_front_right);
+  fixed_t a2 = FIXED_Mul(VAL_SQRT_1_DIV_2, telemetry.ir_front_left);
+  fixed_t a3 = telemetry.ir_right;
+  fixed_t a4 = telemetry.ir_left;
   
-  int32_t dist_x = new_mc_x - mc_x;
-  int32_t dist_y = new_mc_y - mc_y;
-  int32_t distSqr = dist_x * dist_x + dist_y * dist_y;
+  fixed_t a1a3 = a1 + a3;
+  //fixed_t a2a4 = a2 + a4;
+  //bool x_positive = a1a3 > a2a4 ? true : false;
 
-  // TODO: set suitable steering and driving PWM
-  //if (distSqr > 9)
-  if (true)
+  fixed_t new_mc_x, new_mc_y, angle, dist;
+  /*
+  if (x_positive)
   {
-    driveCmd.changeSteering = true;
-    driveCmd.steeringPwm = 90 + 5 * new_mc_x;
-    driveCmd.changeDriving = true;
-    driveCmd.drivingPwm = 184;//190 - 3 * new_mc_y;
+    new_mc_x = FIXED_Mul(VAL_1_DIV_4, a1a3 - a2a4);
   }
   else
   {
-    driveCmd.changeSteering = false;
-    driveCmd.steeringPwm = lastDriveCmd.steeringPwm;
-    driveCmd.changeDriving = false;
-    driveCmd.drivingPwm = lastDriveCmd.drivingPwm;
+    new_mc_x = FIXED_Mul(VAL_1_DIV_4, a2a4 - a1a3);
   }
-  
+  */
+  new_mc_x = FIXED_Mul(VAL_1_DIV_4, a1 + a3 - a2 - a4);
+  new_mc_y = FIXED_Mul(VAL_1_DIV_4, a1 + a2);
+
+  dist = FIXED_FROM_DOUBLE(sqrt(FIXED_TO_DOUBLE(FIXED_Mul(new_mc_x, new_mc_x) + FIXED_Mul(new_mc_y, new_mc_y))));
+  angle = FIXED_Mul(VAL_RAD_TO_DEG, FIXED_FROM_DOUBLE(atan2(FIXED_TO_DOUBLE(new_mc_y), FIXED_TO_DOUBLE(new_mc_x)))); // angle
+  /*
+  if (!x_positive)
+  {
+    fixed_t diffWithNinety = FIXED_FROM_INT(90) - angle;
+    angle += diffWithNinety + diffWithNinety;
+  }
+  */
+
+  driveCmd.changeSteering = true;
+  driveCmd.steeringPwm = 90 - (FIXED_TO_INT(angle) - 90);
+  driveCmd.changeDriving = true;
+  driveCmd.drivingPwm = 90 - FIXED_TO_INT(dist);
+
   clampSteeringAndSpeed();
 
   telemetry.mc_x = mc_x = new_mc_x;
   telemetry.mc_y = mc_y = new_mc_y;
+  telemetry.mc_dist = dist;
+  telemetry.mc_angle = angle;
   telemetry.changeSteering = driveCmd.changeSteering;
   telemetry.steeringPwm = driveCmd.steeringPwm;
   telemetry.changeDriving = driveCmd.changeDriving;
@@ -96,4 +93,5 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry)
 
   return driveCmd;
 }
+
 

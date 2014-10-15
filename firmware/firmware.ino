@@ -31,7 +31,7 @@ Servo drivingservo;
 
 bool automatic = false;
 
-uint32_t last_time = 0, time = 0;
+uint32_t last_time = 0;
 
 MCDriver driver;
 
@@ -74,6 +74,7 @@ void loop() {
     }
   }
 
+  telemetry.time = millis();
   telemetry.ir_left = sharp_left.distance();
   telemetry.ir_right = sharp_right.distance();
   telemetry.ir_front_left = sharp_front_left.distance();
@@ -92,11 +93,10 @@ void loop() {
     }
   }
 
-  time = millis();
-  if (time > last_time + 20)
+  if (telemetry.time > last_time + 20)
   {
     send_telemetry();
-    last_time = time;
+    last_time = telemetry.time;
   }
 
   //delay(10);

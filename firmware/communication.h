@@ -13,6 +13,7 @@ enum {
 
 typedef struct bc_telemetry_packet_t {
 	uint8_t header; // BC_TELEMETRY
+        uint32_t time;
 	fixed_t ir_left;
 	fixed_t ir_right;
 	fixed_t ir_front_left;

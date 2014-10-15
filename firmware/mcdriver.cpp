@@ -8,7 +8,8 @@ MCDriver::MCDriver()
   lastDriveCmd.changeSteering = false;
   lastDriveCmd.steeringPwm = 90;
   lastDriveCmd.changeDriving = false;
-  lastDriveCmd.drivingPwm = 190;
+  lastDriveCmd.drivingPwm = 92;
+  last_time = 0;
 }
 
 void MCDriver::clampSteeringAndSpeed()
@@ -73,7 +74,18 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry)
   driveCmd.changeSteering = true;
   driveCmd.steeringPwm = 90 - (FIXED_TO_INT(angle) - 90);
   driveCmd.changeDriving = true;
-  driveCmd.drivingPwm = 91;  //90 - FIXED_TO_INT(dist);
+  if (telemetry.time < last_time + 20)
+  {
+    driveCmd.drivingPwm = 90;  //90 - FIXED_TO_INT(dist);
+  }
+  else 
+  {
+    driveCmd.drivingPwm = 92;
+    if (telemetry.time > last_time + 25)
+    {
+      last_time = telemetry.time;
+    }
+  }
 
   clampSteeringAndSpeed();
 

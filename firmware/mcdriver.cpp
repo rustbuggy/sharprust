@@ -73,7 +73,7 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry)
   driveCmd.changeSteering = true;
   driveCmd.steeringPwm = 90 - (FIXED_TO_INT(angle) - 90);
   driveCmd.changeDriving = true;
-  driveCmd.drivingPwm = 90 - FIXED_TO_INT(dist);
+  driveCmd.drivingPwm = 91;  //90 - FIXED_TO_INT(dist);
 
   clampSteeringAndSpeed();
 

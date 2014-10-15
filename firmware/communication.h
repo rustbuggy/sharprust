@@ -30,6 +30,7 @@ typedef struct bc_telemetry_packet_t {
 
 typedef struct cb_motor_command_packet_t {
 	uint8_t header; // CB_MOTOR_COMMAND
+        uint8_t automatic;
 	uint8_t steering_pwm;
 	uint8_t drive_pwm;
 } cb_motor_command_packet_t __attribute__((packed));

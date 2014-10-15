@@ -29,7 +29,9 @@ HDLC hdlc(m_rx_buffer, 64);
 Servo steeringservo;
 Servo drivingservo;
 
-bool stop = true;
+bool automatic = false;
+
+uint32_t last_time = 0, time = 0;
 
 MCDriver driver;
 
@@ -62,22 +64,23 @@ void loop() {
       if (CB_MOTOR_COMMAND == header)
       {
         cb_motor_command_packet_t* motor = (cb_motor_command_packet_t*)m_rx_buffer;
-        //analogWrite(STEERING_PWM_PIN, motor->steering_pwm);
-        //analogWrite(DRIVE_PWM_PIN, motor->drive_pwm);
-        steeringservo.write(motor->steering_pwm);
-        drivingservo.write(motor->drive_pwm);
-        stop = motor->steering_pwm == 90 && motor->drive_pwm == 92;
+        automatic = motor->automatic != 0;
+        if (!automatic)
+        {
+          steeringservo.write(motor->steering_pwm);
+          drivingservo.write(motor->drive_pwm);
+        }
       }
     }
   }
 
-  telemetry.ir_left = sharp_left.distance(); //FIXED_Mul(FIXED_FROM_DOUBLE(-6.73), FIXED_FROM_DOUBLE(-6.73));//
+  telemetry.ir_left = sharp_left.distance();
   telemetry.ir_right = sharp_right.distance();
   telemetry.ir_front_left = sharp_front_left.distance();
   telemetry.ir_front_right = sharp_front_right.distance();
 
   drive_cmd_t& driveCmd = driver.drive(telemetry);
-  if (!stop)
+  if (automatic)
   {
     if (driveCmd.changeSteering)
     {
@@ -89,9 +92,14 @@ void loop() {
     }
   }
 
-  send_telemetry();
+  time = millis();
+  if (time > last_time + 20)
+  {
+    send_telemetry();
+    last_time = time;
+  }
 
-  delay(10);
+  //delay(10);
 
   //Serial.print("left: ");
   //Serial.println(m_distance_left);

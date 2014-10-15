@@ -7,9 +7,7 @@
 class MCDriver : 
 public Driver {
 protected:
-  fixed_t mc_x, mc_y;
-  drive_cmd_t lastDriveCmd;
-  uint32_t last_time;
+  uint32_t last_time, stopped_since;
   
   void clampSteeringAndSpeed();
 

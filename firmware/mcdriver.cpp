@@ -4,12 +4,8 @@
 
 MCDriver::MCDriver()
 {
-  mc_x = mc_y = 0;
-  lastDriveCmd.changeSteering = false;
-  lastDriveCmd.steeringPwm = 90;
-  lastDriveCmd.changeDriving = false;
-  lastDriveCmd.drivingPwm = 92;
   last_time = 0;
+  stopped_since = 0;
 }
 
 void MCDriver::clampSteeringAndSpeed()
@@ -43,65 +39,62 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry)
   fixed_t a3 = telemetry.ir_right;
   fixed_t a4 = telemetry.ir_left;
   
-  fixed_t a1a3 = a1 + a3;
-  //fixed_t a2a4 = a2 + a4;
-  //bool x_positive = a1a3 > a2a4 ? true : false;
-
-  fixed_t new_mc_x, new_mc_y, angle, dist;
-  /*
-  if (x_positive)
-  {
-    new_mc_x = FIXED_Mul(VAL_1_DIV_4, a1a3 - a2a4);
-  }
-  else
-  {
-    new_mc_x = FIXED_Mul(VAL_1_DIV_4, a2a4 - a1a3);
-  }
-  */
-  new_mc_x = FIXED_Mul(VAL_1_DIV_4, a1 + a3 - a2 - a4);
-  new_mc_y = FIXED_Mul(VAL_1_DIV_4, a1 + a2);
-
-  dist = FIXED_FROM_DOUBLE(sqrt(FIXED_TO_DOUBLE(FIXED_Mul(new_mc_x, new_mc_x) + FIXED_Mul(new_mc_y, new_mc_y))));
-  angle = FIXED_Mul(VAL_RAD_TO_DEG, FIXED_FROM_DOUBLE(atan2(FIXED_TO_DOUBLE(new_mc_y), FIXED_TO_DOUBLE(new_mc_x)))); // angle
-  /*
-  if (!x_positive)
-  {
-    fixed_t diffWithNinety = FIXED_FROM_INT(90) - angle;
-    angle += diffWithNinety + diffWithNinety;
-  }
-  */
+  fixed_t mc_x = FIXED_Mul(VAL_1_DIV_4, a1 + a3 - a2 - a4);
+  fixed_t mc_y = FIXED_Mul(VAL_1_DIV_4, a1 + a2);
+  fixed_t dist = FIXED_FROM_DOUBLE(sqrt(FIXED_TO_DOUBLE(FIXED_Mul(mc_x, mc_x) + FIXED_Mul(mc_y, mc_y)))); // TODO: get rid of double and sqrt
+  fixed_t angle = FIXED_Mul(VAL_RAD_TO_DEG, FIXED_FROM_DOUBLE(atan2(FIXED_TO_DOUBLE(mc_y), FIXED_TO_DOUBLE(mc_x)))); // TODO: get rid of double and ata
+  
+  fixed_t minFront = a1 < a2 ? a1 : a2;
 
   driveCmd.changeSteering = true;
   driveCmd.steeringPwm = 90 - (FIXED_TO_INT(angle) - 90);
   driveCmd.changeDriving = true;
-  if (telemetry.time < last_time + 20)
+  bool maybeStuck = FIXED_TO_INT(dist) < 10 || minFront < 15;
+  if (!maybeStuck)
   {
-    driveCmd.drivingPwm = 90;  //90 - FIXED_TO_INT(dist);
-  }
-  else 
-  {
-    driveCmd.drivingPwm = 92;
-    if (telemetry.time > last_time + 25)
+    stopped_since = 0;
+    if (telemetry.time < last_time + 20)
     {
-      last_time = telemetry.time;
+      driveCmd.drivingPwm = 90; //92 - FIXED_TO_INT(dist);
     }
+    else 
+    {
+      driveCmd.drivingPwm = 92;
+      if (telemetry.time > last_time + 25)
+      {
+        last_time = telemetry.time;
+      }
+    }
+  }
+  else
+  {
+    if (stopped_since == 0)
+    {
+      stopped_since = telemetry.time;
+    }
+    else if (telemetry.time > stopped_since + 3000)
+    {
+      driveCmd.steeringPwm = 90;
+      driveCmd.drivingPwm = 100;
+    }
+    else
+    {
+      driveCmd.drivingPwm = 91;
+    }
+    last_time = telemetry.time;
   }
 
   clampSteeringAndSpeed();
 
-  telemetry.mc_x = mc_x = new_mc_x;
-  telemetry.mc_y = mc_y = new_mc_y;
+  // Fill missing telemetry values
+  telemetry.mc_x = mc_x;
+  telemetry.mc_y = mc_y;
   telemetry.mc_dist = dist;
   telemetry.mc_angle = angle;
   telemetry.changeSteering = driveCmd.changeSteering;
   telemetry.steeringPwm = driveCmd.steeringPwm;
   telemetry.changeDriving = driveCmd.changeDriving;
   telemetry.drivingPwm = driveCmd.drivingPwm;
-
-  lastDriveCmd.changeSteering = driveCmd.changeSteering;
-  lastDriveCmd.steeringPwm = driveCmd.steeringPwm;
-  lastDriveCmd.changeDriving = driveCmd.changeDriving;
-  lastDriveCmd.drivingPwm = driveCmd.drivingPwm;
 
   return driveCmd;
 }

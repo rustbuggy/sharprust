@@ -5,6 +5,7 @@
 #include "Hdlc.h"
 #include "mcdriver.h"
 
+#define TEENSY_LED          13
 #define IR_LEFT             A9
 #define IR_RIGHT            A8
 #define IR_FRONT_LEFT       A7
@@ -22,11 +23,11 @@ IRSharp sharp_front_left(IR_FRONT_LEFT);
 IRSharp sharp_front_right(IR_FRONT_RIGHT);
 IRSharp sharp_front(IR_FRONT);
 
-uint8_t m_rx_buffer[64];
+uint8_t m_rx_buffer[255];
 uint8_t m_rx_len = 0;
-uint8_t m_tx_buffer[64];
+uint8_t m_tx_buffer[255];
 uint8_t m_tx_len = 0;
-HDLC hdlc(m_rx_buffer, 64);
+HDLC hdlc(m_rx_buffer, 255);
 
 Servo steeringservo;
 Servo drivingservo;
@@ -39,23 +40,38 @@ MCDriver driver;
 
 void send_telemetry() {
 	m_tx_len = hdlc.encode((uint8_t*)&telemetry, sizeof(bc_telemetry_packet_t), m_tx_buffer);
-	Serial.write(m_tx_buffer, m_tx_len);
+	Serial3.write(m_tx_buffer, m_tx_len);
 }
 
 void setup() {
-	Serial.begin(57600);
+	Serial3.begin(57600);
 
 	steeringservo.attach(STEERING_PWM_PIN);
 	drivingservo.attach(DRIVE_PWM_PIN);
 
 	analogReference(DEFAULT);
+	pinMode(TEENSY_LED, OUTPUT);
 
 	telemetry.header = BC_TELEMETRY;
 }
 
+void toggle_led() {
+	static bool ledon = true;
+	if (ledon) {
+		ledon = false;
+		digitalWrite(TEENSY_LED, HIGH);
+	}
+	else {
+		ledon = true;
+		digitalWrite(TEENSY_LED, LOW);
+	}
+}
+
 void loop() {
-	while (Serial.available() > 0) {
-		m_rx_len = hdlc.decode(Serial.read());
+	toggle_led();
+
+	while (Serial3.available() > 0) {
+		m_rx_len = hdlc.decode(Serial3.read());
 
 		// check if HDLC packet is received
 		if (m_rx_len > 0) {

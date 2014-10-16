@@ -1,15 +1,7 @@
 #ifndef __TYPES__H
 #define __TYPES__H
 
-typedef unsigned char uint8_t;
-typedef unsigned int uint16_t;
-typedef unsigned long int uint32_t;
-typedef unsigned long long uint64_t;
-
-typedef signed char int8_t;
-typedef signed int int16_t;
-typedef signed long int int32_t;
-typedef signed long long int64_t;
+#include <stdint.h>
 
 typedef int32_t int_t;
 typedef uint32_t uint_t;
@@ -55,23 +47,21 @@ typedef int64_t fixed_upscale_t;
 #define VAL_9_DIV_10 230
 */
 
-inline fixed_t FIXED_Mul(fixed_t a, fixed_t b)
-{
-  fixed_upscale_t temp;
-  temp = fixed_upscale_t(a) * fixed_upscale_t(b); // result type is operand's type
-  temp += FIXED_K; // Rounding; mid values are rounded up TODO: is it correct for negative numbers
+inline fixed_t FIXED_Mul(fixed_t a, fixed_t b) {
+	fixed_upscale_t temp;
+	temp = fixed_upscale_t(a) * fixed_upscale_t(b); // result type is operand's type
+	temp += FIXED_K; // Rounding; mid values are rounded up TODO: is it correct for negative numbers
 
-  return fixed_t(temp >> FIXED_FBITS); // Correct by dividing by base
+	return fixed_t(temp >> FIXED_FBITS); // Correct by dividing by base
 }
 
-inline fixed_t FIXED_Div(fixed_t a, fixed_t b)
-{
-  fixed_upscale_t temp;
-  // pre-multiply by the base
-  temp = fixed_upscale_t(fixed_upscale_t(a) << FIXED_FBITS);
-  // So the result will be rounded ; mid values are rounded up.
-  temp += b / 2;
-  return fixed_t(temp / b);
+inline fixed_t FIXED_Div(fixed_t a, fixed_t b) {
+	fixed_upscale_t temp;
+	// pre-multiply by the base
+	temp = fixed_upscale_t(fixed_upscale_t(a) << FIXED_FBITS);
+	// So the result will be rounded ; mid values are rounded up.
+	temp += b / 2;
+	return fixed_t(temp / b);
 }
 
 #endif // __TYPES__H

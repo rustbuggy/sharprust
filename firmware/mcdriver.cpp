@@ -40,16 +40,16 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 	fixed_t minFront = a1 < a2 ? a1 : a2;
 
 	driveCmd.changeSteering = true;
-	driveCmd.steeringPwm = 90 - (FIXED_TO_INT(angle) - 90);
+	driveCmd.steeringPwm = 103 - (FIXED_TO_INT(angle) - 103);
 	driveCmd.changeDriving = true;
 	bool maybeStuck = FIXED_TO_INT(dist) < 10 || minFront < 15;
 	if (!maybeStuck) {
 		stopped_since = 0;
 		if (telemetry.time < last_time + 20) {
-			driveCmd.drivingPwm = 90; //92 - FIXED_TO_INT(dist);
+			driveCmd.drivingPwm = 100; //92 - FIXED_TO_INT(dist);
 		}
 		else {
-			driveCmd.drivingPwm = 92;
+			driveCmd.drivingPwm = 103;
 			if (telemetry.time > last_time + 25) {
 				last_time = telemetry.time;
 			}
@@ -61,10 +61,10 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 		}
 		else if (telemetry.time > stopped_since + 3000) {
 			driveCmd.steeringPwm = 90;
-			driveCmd.drivingPwm = 100;
+			driveCmd.drivingPwm = 83;
 		}
 		else {
-			driveCmd.drivingPwm = 91;
+			driveCmd.drivingPwm = 102;
 		}
 
 		last_time = telemetry.time;
@@ -77,10 +77,10 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 	telemetry.mc_y = mc_y;
 	telemetry.mc_dist = dist;
 	telemetry.mc_angle = angle;
-	telemetry.changeSteering = driveCmd.changeSteering;
-	telemetry.steeringPwm = driveCmd.steeringPwm;
-	telemetry.changeDriving = driveCmd.changeDriving;
-	telemetry.drivingPwm = driveCmd.drivingPwm;
+	telemetry.change_steering = driveCmd.changeSteering;
+	telemetry.steering_pwm = driveCmd.steeringPwm;
+	telemetry.change_driving = driveCmd.changeDriving;
+	telemetry.driving_pwm = driveCmd.drivingPwm;
 
 	return driveCmd;
 }

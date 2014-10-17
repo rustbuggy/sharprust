@@ -34,6 +34,8 @@ typedef int64_t fixed_upscale_t;
 #define VAL_1_DIV_2 32768
 #define VAL_1_DIV_4 16384
 #define VAL_3_DIV_4 49152
+#define VAL_1_DIV_3 21845
+#define VAL_1_DIV_5 13107
 #define VAL_1_DIV_10 6553
 #define VAL_9_DIV_10 58982
 
@@ -43,6 +45,8 @@ typedef int64_t fixed_upscale_t;
 #define VAL_1_DIV_2 128
 #define VAL_1_DIV_4 64
 #define VAL_3_DIV_4 192
+#define VAL_1_DIV_3 85
+#define VAL_1_DIV_5 51
 #define VAL_1_DIV_10 25
 #define VAL_9_DIV_10 230
 */

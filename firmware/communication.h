@@ -24,10 +24,10 @@ typedef struct __attribute__((packed)) {
 	fixed_t mc_dist;
 	fixed_t mc_angle;
 
-	bool changeSteering;
-	int32_t steeringPwm;
-	bool changeDriving;
-	int32_t drivingPwm;
+	bool change_steering;
+	int32_t steering_pwm;
+	bool change_driving;
+	int32_t driving_pwm;
 } bc_telemetry_packet_t;
 
 typedef struct __attribute__((packed)) {

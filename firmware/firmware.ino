@@ -39,7 +39,8 @@ uint32_t last_time = 0;
 MCDriver driver;
 
 void send_telemetry() {
-	m_tx_len = hdlc.encode((uint8_t*)&telemetry, sizeof(bc_telemetry_packet_t), m_tx_buffer);
+	m_tx_len = hdlc.encode((uint8_t*) &telemetry, sizeof(bc_telemetry_packet_t),
+			m_tx_buffer);
 	Serial3.write(m_tx_buffer, m_tx_len);
 }
 
@@ -49,7 +50,7 @@ void setup() {
 	steeringservo.attach(STEERING_PWM_PIN);
 	drivingservo.attach(DRIVE_PWM_PIN);
 
-	analogReference(DEFAULT);
+	analogReference (DEFAULT);
 	pinMode(TEENSY_LED, OUTPUT);
 
 	telemetry.header = BC_TELEMETRY;
@@ -60,8 +61,7 @@ void toggle_led() {
 	if (ledon) {
 		ledon = false;
 		digitalWrite(TEENSY_LED, HIGH);
-	}
-	else {
+	} else {
 		ledon = true;
 		digitalWrite(TEENSY_LED, LOW);
 	}
@@ -75,10 +75,11 @@ void loop() {
 
 		// check if HDLC packet is received
 		if (m_rx_len > 0) {
-			uint8_t header = ((uint8_t*)m_rx_buffer)[0];
+			uint8_t header = ((uint8_t*) m_rx_buffer)[0];
 
 			if (CB_MOTOR_COMMAND == header) {
-				cb_motor_command_packet_t* motor = (cb_motor_command_packet_t*)m_rx_buffer;
+				cb_motor_command_packet_t* motor =
+						(cb_motor_command_packet_t*) m_rx_buffer;
 				automatic = motor->automatic != 0;
 				if (!automatic) {
 					steeringservo.write(motor->steering_pwm);
@@ -113,5 +114,4 @@ void loop() {
 	//Serial.print("left: ");
 	//Serial.println(m_distance_left);
 }
-
 

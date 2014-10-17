@@ -40,7 +40,7 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 	fixed_t a2 = FIXED_Mul(VAL_SQRT_1_DIV_2, telemetry.ir_front_left);
 	fixed_t a3 = telemetry.ir_right;
 	fixed_t a4 = telemetry.ir_left;
-        fixed_t a5 = telemetry.ir_front;
+	fixed_t a5 = telemetry.ir_front;
 
 	fixed_t mc_x = FIXED_Mul(VAL_1_DIV_5, a1 + a3 - a2 - a4); // TODO: calculate offset from sensor positioning as well
 	fixed_t mc_y = FIXED_Mul(VAL_1_DIV_5, a1 + a2 + a5); // TODO: calculate offset from sensor positioning as well
@@ -48,12 +48,12 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 	fixed_t angle = FIXED_Mul(VAL_RAD_TO_DEG, FIXED_FROM_DOUBLE(atan2(FIXED_TO_DOUBLE(mc_y), FIXED_TO_DOUBLE(mc_x)))); // TODO: get rid of double and ata
 
 	fixed_t minFront = a1;
-        if (minFront > a2) {
-          minFront = a2;
-        }
-        if (minFront > a5) {
-          minFront = a5;
-        }
+	if (minFront > a2) {
+		minFront = a2;
+	}
+	if (minFront > a5) {
+		minFront = a5;
+	}
 
 	driveCmd.changeSteering = true;
 	driveCmd.steeringPwm = 90 - (FIXED_TO_INT(angle) - 90);
@@ -91,5 +91,4 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 
 	return driveCmd;
 }
-
 

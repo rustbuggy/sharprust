@@ -1,12 +1,11 @@
-
 #include "Arduino.h"
 #include "Hdlc.h"
 
-HDLC::HDLC(uint8_t* decoder_buf, uint8_t len){
+HDLC::HDLC(uint8_t* decoder_buf, uint8_t len) {
 	_dec_tail = NULL;
 
-	_dec_checksum   = 0;
-	_dec_prev_byte  = 0;
+	_dec_checksum = 0;
+	_dec_prev_byte = 0;
 
 	_dec_buf = decoder_buf;
 	_decoder_restart_receiving();
@@ -23,7 +22,7 @@ uint8_t HDLC::decode(uint8_t data) {
 				_decoder_reset();
 			}
 			// checksum ok?
-			else if ((uint8_t)(_dec_checksum - *(_dec_tail-1)) == *(_dec_tail-1)) {
+			else if ((uint8_t)(_dec_checksum - *(_dec_tail - 1)) == *(_dec_tail - 1)) {
 				uint8_t decoded_packet_len = _dec_tail - _dec_buf - 1;
 				_decoder_reset();
 				return decoded_packet_len;
@@ -40,7 +39,7 @@ uint8_t HDLC::decode(uint8_t data) {
 			_decoder_reset();
 		}
 		else if (_dec_state.escaping) {
-			*_dec_tail++   = data ^ 0x20;
+			*_dec_tail++ = data ^ 0x20;
 			_dec_checksum += data ^ 0x20;
 			_dec_state.escaping = 0;
 		}
@@ -49,7 +48,7 @@ uint8_t HDLC::decode(uint8_t data) {
 				_dec_state.escaping = 1;
 			}
 			else {
-				*_dec_tail++   = data;
+				*_dec_tail++ = data;
 				_dec_checksum += data;
 			}
 		}
@@ -62,8 +61,8 @@ uint8_t HDLC::decode(uint8_t data) {
 			if (HDLC_ESC == data) {
 				_dec_state.escaping = 1;
 			}
-			else{
-				*_dec_tail++   = data;
+			else {
+				*_dec_tail++ = data;
 				_dec_checksum += data;
 			}
 		}
@@ -75,10 +74,10 @@ uint8_t HDLC::decode(uint8_t data) {
 }
 
 void HDLC::_decoder_restart_receiving() {
-	_dec_tail     = _dec_buf;
+	_dec_tail = _dec_buf;
 	_dec_checksum = 0;
 	_dec_state.receiving = 0;
-	_dec_state.escaping  = 0;
+	_dec_state.escaping = 0;
 }
 
 void HDLC::_decoder_reset() {
@@ -100,18 +99,16 @@ uint8_t HDLC::encode(uint8_t* source, uint8_t source_len, uint8_t* dest) {
 	//             guaranteed to be <= source_len * 2 + 4
 	//
 
-	uint8_t* sourcep  = source;
-	uint8_t* destp    = dest;
-	uint8_t* end      = sourcep + source_len;
-	uint8_t  checksum = 0;
+	uint8_t* sourcep = source;
+	uint8_t* destp = dest;
+	uint8_t* end = sourcep + source_len;
+	uint8_t checksum = 0;
 
 	*destp++ = HDLC_DELIM;
 
-	while (sourcep != end)
-	{
+	while (sourcep != end) {
 		checksum += *sourcep;
-		if (_needs_escaping(*sourcep))
-		{
+		if (_needs_escaping(*sourcep)) {
 			*destp++ = HDLC_ESC;
 			*destp++ = *sourcep++ ^ 0x20;
 		}
@@ -120,8 +117,7 @@ uint8_t HDLC::encode(uint8_t* source, uint8_t source_len, uint8_t* dest) {
 	}
 
 	// append checksum to dest
-	if (_needs_escaping(checksum))
-	{
+	if (_needs_escaping(checksum)) {
 		*destp++ = HDLC_ESC;
 		*destp++ = checksum ^ 0x20;
 	}

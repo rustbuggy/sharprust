@@ -13,10 +13,10 @@ typedef struct drive_cmd_t {
 
 // Abstract base class
 class Driver {
-	protected:
+protected:
 	drive_cmd_t driveCmd;
 
-	public:
+public:
 	virtual drive_cmd_t& drive(bc_telemetry_packet_t& telemetry) = 0;
 };
 

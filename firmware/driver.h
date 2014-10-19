@@ -5,9 +5,7 @@
 #include "communication.h"
 
 typedef struct drive_cmd_t {
-	bool changeSteering;
 	int32_t steeringPwm;
-	bool changeDriving;
 	int32_t drivingPwm;
 } drive_cmd_t;
 

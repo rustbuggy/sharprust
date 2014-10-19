@@ -39,22 +39,10 @@ typedef int64_t fixed_upscale_t;
 #define VAL_1_DIV_10 6553
 #define VAL_9_DIV_10 58982
 
-// Values for fixed point 8.8
-/*
- #define VAL_SQRT_1_DIV_2 181
- #define VAL_1_DIV_2 128
- #define VAL_1_DIV_4 64
- #define VAL_3_DIV_4 192
- #define VAL_1_DIV_3 85
- #define VAL_1_DIV_5 51
- #define VAL_1_DIV_10 25
- #define VAL_9_DIV_10 230
- */
-
 inline fixed_t FIXED_Mul(fixed_t a, fixed_t b) {
 	fixed_upscale_t temp;
 	temp = fixed_upscale_t(a) * fixed_upscale_t(b); // result type is operand's type
-	temp += FIXED_K; // Rounding; mid values are rounded up TODO: is it correct for negative numbers
+	temp += FIXED_K; // Rounding; mid values are rounded up
 
 	return fixed_t(temp >> FIXED_FBITS); // Correct by dividing by base
 }

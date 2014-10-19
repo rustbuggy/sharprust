@@ -7,16 +7,17 @@
 #define NORMAL_BACKWARD 65
 
 MCDriver::MCDriver() {
-	last_time = 0;
-	stopped_since = 0;
+	state = STATE_IDLE;
 
-	driveCmd.changeSteering = false;
+	min_front = 0;
+
+	maybe_stuck = false;
+
 	driveCmd.steeringPwm = STOP;
-	driveCmd.changeDriving = false;
 	driveCmd.drivingPwm = STOP;
 }
 
-void MCDriver::clampSteeringAndSpeed() {
+void MCDriver::setSteeringAndSpeed(bc_telemetry_packet_t& telemetry) {
 	// Steering
 	if (driveCmd.steeringPwm > 130) {
 		driveCmd.steeringPwm = 130;
@@ -32,9 +33,13 @@ void MCDriver::clampSteeringAndSpeed() {
 	else if (driveCmd.drivingPwm < NORMAL_BACKWARD) {
 		driveCmd.drivingPwm = NORMAL_BACKWARD;
 	}
+
+	// Fill missing telemetry values
+	telemetry.steering_pwm = driveCmd.steeringPwm;
+	telemetry.driving_pwm = driveCmd.drivingPwm;
 }
 
-drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
+void MCDriver::calc_mc(bc_telemetry_packet_t& telemetry) {
 	// Mass center calculation
 	fixed_t a1 = FIXED_Mul(VAL_SQRT_1_DIV_2, telemetry.ir_front_right);
 	fixed_t a2 = FIXED_Mul(VAL_SQRT_1_DIV_2, telemetry.ir_front_left);
@@ -42,52 +47,66 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 	fixed_t a4 = telemetry.ir_left;
 	fixed_t a5 = telemetry.ir_front;
 
-	fixed_t mc_x = FIXED_Mul(VAL_1_DIV_5, a1 + a3 - a2 - a4); // TODO: calculate offset from sensor positioning as well
-	fixed_t mc_y = FIXED_Mul(VAL_1_DIV_5, a1 + a2 + a5); // TODO: calculate offset from sensor positioning as well
-	fixed_t dist = FIXED_FROM_DOUBLE(sqrt(FIXED_TO_DOUBLE(FIXED_Mul(mc_x, mc_x) + FIXED_Mul(mc_y, mc_y)))); // TODO: get rid of double and sqrt
-	fixed_t angle = FIXED_Mul(VAL_RAD_TO_DEG, FIXED_FROM_DOUBLE(atan2(FIXED_TO_DOUBLE(mc_y), FIXED_TO_DOUBLE(mc_x)))); // TODO: get rid of double and ata
-
-	fixed_t minFront = a1;
-	if (minFront > a2) {
-		minFront = a2;
+	min_front = a1;
+	if (min_front > a2) {
+		min_front = a2;
 	}
-	if (minFront > a5) {
-		minFront = a5;
+	if (min_front > a5) {
+		min_front = a5;
 	}
-
-	driveCmd.changeSteering = true;
-	driveCmd.steeringPwm = 90 - (FIXED_TO_INT(angle) - 90);
-	driveCmd.changeDriving = true;
-
-	bool maybeStuck = (FIXED_TO_INT(dist) < 10) || (FIXED_TO_INT(minFront) < 10); // replace it with some kind of sensible state machine to get out of stuck state
-	if (maybeStuck) {
-		if (stopped_since == 0) {
-			stopped_since = telemetry.time;
-		}
-		else if (telemetry.time > stopped_since + 3000) {
-			driveCmd.steeringPwm = 90;
-			driveCmd.drivingPwm = NORMAL_BACKWARD;
-			stopped_since = telemetry.time;
-		}
-
-		last_time = telemetry.time;
-	}
-	else {
-		stopped_since = 0;
-		driveCmd.drivingPwm = NORMAL_FORWARD;
-	}
-
-	clampSteeringAndSpeed();
 
 	// Fill missing telemetry values
-	telemetry.mc_x = mc_x;
-	telemetry.mc_y = mc_y;
-	telemetry.mc_dist = dist;
-	telemetry.mc_angle = angle;
-	telemetry.change_steering = driveCmd.changeSteering;
-	telemetry.steering_pwm = driveCmd.steeringPwm;
-	telemetry.change_driving = driveCmd.changeDriving;
-	telemetry.driving_pwm = driveCmd.drivingPwm;
+	telemetry.mc_x = FIXED_Mul(VAL_1_DIV_5, a1 + a3 - a2 - a4); // TODO: calculate offset from sensor positioning as well
+	telemetry.mc_y = FIXED_Mul(VAL_1_DIV_5, a1 + a2 + a5); // TODO: calculate offset from sensor positioning as well
+	telemetry.mc_dist = FIXED_FROM_DOUBLE(
+		sqrt(FIXED_TO_DOUBLE(FIXED_Mul(telemetry.mc_x, telemetry.mc_x) + FIXED_Mul(telemetry.mc_y, telemetry.mc_y)))); // TODO: get rid of double and sqrt
+	telemetry.mc_angle = FIXED_Mul(VAL_RAD_TO_DEG,
+		FIXED_FROM_DOUBLE(atan2(FIXED_TO_DOUBLE(telemetry.mc_y), FIXED_TO_DOUBLE(telemetry.mc_x)))); // TODO: get rid of double and ata
+}
+
+drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
+	calc_mc(telemetry);
+	maybe_stuck = (FIXED_TO_INT(telemetry.mc_dist) < 10) || (FIXED_TO_INT(min_front) < 10); // replace it with some kind of sensible state machine to get out of stuck state
+
+	switch (state) {
+		case STATE_NORMAL:
+			driveCmd.steeringPwm = 90 - (FIXED_TO_INT(telemetry.mc_angle) - 90);
+			driveCmd.drivingPwm = NORMAL_FORWARD;
+
+			if (maybe_stuck) {
+				if (!stuck_timer.running()) {
+					stuck_timer.start(telemetry.time, 3000);
+				}
+				else if (stuck_timer.triggered(telemetry.time)) {
+					state = STATE_STUCK;
+					stuck_timer.stop();
+				}
+			}
+			else {
+				stuck_timer.stop();
+			}
+			break;
+
+		case STATE_STUCK:
+			driveCmd.steeringPwm = 90 + (FIXED_TO_INT(telemetry.mc_angle) - 90);
+			driveCmd.drivingPwm = NORMAL_BACKWARD;
+
+			if (!stuck_timer.running()) {
+				stuck_timer.start(telemetry.time, 3000);
+			}
+			else if (!maybe_stuck || stuck_timer.triggered(telemetry.time)) {
+				stuck_timer.stop();
+				state = STATE_NORMAL;
+			}
+			break;
+
+		case STATE_IDLE:
+		default:
+			state = STATE_NORMAL;
+			break;
+	}
+
+	setSteeringAndSpeed(telemetry);
 
 	return driveCmd;
 }

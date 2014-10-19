@@ -98,12 +98,8 @@ void loop() {
 
 	drive_cmd_t& driveCmd = driver.drive(telemetry);
 	if (automatic) {
-		if (driveCmd.changeSteering) {
-			steeringservo.write(driveCmd.steeringPwm);
-		}
-		if (driveCmd.changeDriving) {
-			drivingservo.write(driveCmd.drivingPwm);
-		}
+		steeringservo.write(driveCmd.steeringPwm);
+		drivingservo.write(driveCmd.drivingPwm);
 	}
 
 	if (telemetry.time > last_time + 20) {

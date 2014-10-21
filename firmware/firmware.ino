@@ -1,7 +1,7 @@
 #include <Servo.h>
 
 #include "irsharp.h"
-#include "Communication.h"
+#include "communication.h"
 #include "Hdlc.h"
 #include "mcdriver.h"
 

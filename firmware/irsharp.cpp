@@ -1,5 +1,5 @@
 #include "Arduino.h"
-#include "IRSharp.h"
+#include "irsharp.h"
 #include "lookups.h"
 
 IRSharp::IRSharp(int irPin) :

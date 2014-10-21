@@ -6,6 +6,10 @@
 #define NORMAL_FORWARD 105
 #define NORMAL_BACKWARD 65
 
+#ifdef DEBUG
+#include "stdio.h"
+#endif
+
 MCDriver::MCDriver() {
 	state = STATE_IDLE;
 
@@ -62,6 +66,15 @@ void MCDriver::calc_mc(bc_telemetry_packet_t& telemetry) {
 		sqrt(FIXED_TO_DOUBLE(FIXED_Mul(telemetry.mc_x, telemetry.mc_x) + FIXED_Mul(telemetry.mc_y, telemetry.mc_y)))); // TODO: get rid of double and sqrt
 	telemetry.mc_angle = FIXED_Mul(VAL_RAD_TO_DEG,
 		FIXED_FROM_DOUBLE(atan2(FIXED_TO_DOUBLE(telemetry.mc_y), FIXED_TO_DOUBLE(telemetry.mc_x)))); // TODO: get rid of double and ata
+	#ifdef DEBUG
+		printf("%2d  %2d  %2d  %2d  %2d  |  x=%4d  y=%4d  d=%9d  a=%9d  |  ", 
+			a1, a2, a3, a4, a5,
+			telemetry.mc_x,
+			telemetry.mc_y,
+			telemetry.mc_dist,
+			telemetry.mc_angle
+		);
+	#endif
 }
 
 drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {

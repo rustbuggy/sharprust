@@ -48,8 +48,7 @@ uint32_t last_time = 0;
 MCDriver driver;
 
 void send_telemetry() {
-	m_tx_len = hdlc.encode((uint8_t*) &telemetry, sizeof(bc_telemetry_packet_t),
-			m_tx_buffer);
+	m_tx_len = hdlc.encode((uint8_t*) &telemetry, sizeof(bc_telemetry_packet_t), m_tx_buffer);
 	SERIALDEV.write(m_tx_buffer, m_tx_len);
 }
 
@@ -59,7 +58,7 @@ void setup() {
 	steeringservo.attach(STEERING_PWM_PIN);
 	drivingservo.attach(DRIVE_PWM_PIN);
 
-	analogReference(DEFAULT);
+	analogReference (DEFAULT);
 	analogReadAveraging(16);
 	analogReadResolution(10);
 	pinMode(TEENSY_LED, OUTPUT);
@@ -72,7 +71,8 @@ void toggle_led() {
 	if (ledon) {
 		ledon = false;
 		digitalWrite(TEENSY_LED, HIGH);
-	} else {
+	}
+	else {
 		ledon = true;
 		digitalWrite(TEENSY_LED, LOW);
 	}
@@ -87,8 +87,7 @@ void loop() {
 			uint8_t header = ((uint8_t*) m_rx_buffer)[0];
 
 			if (CB_MOTOR_COMMAND == header) {
-				cb_motor_command_packet_t* motor =
-						(cb_motor_command_packet_t*) m_rx_buffer;
+				cb_motor_command_packet_t* motor = (cb_motor_command_packet_t*) m_rx_buffer;
 				m_automatic = motor->automatic;
 				if (m_automatic) {
 					driver.set_drive_pwm(motor->drive_pwm);
@@ -102,17 +101,16 @@ void loop() {
 	}
 
 	telemetry.time = millis();
-	// do not use left/right sensor
-	telemetry.ir_left = 10;
-	telemetry.ir_right = 10;
+	telemetry.ir_left = sharp_left.distance();
+	telemetry.ir_right = sharp_right.distance();
 	telemetry.ir_front_left = sharp_front_left.distance();
 	telemetry.ir_front_right = sharp_front_right.distance();
 	telemetry.ir_front = sharp_front.distance();
 
 	drive_cmd_t& driveCmd = driver.drive(telemetry);
 	if (m_automatic) {
-		steeringservo.write(driveCmd.steeringPwm);
-		drivingservo.write(driveCmd.drivingPwm);
+		steeringservo.write(driveCmd.steering_pwm);
+		drivingservo.write(driveCmd.driving_pwm);
 		toggle_led();
 	}
 
@@ -120,8 +118,5 @@ void loop() {
 		send_telemetry();
 		last_time = telemetry.time;
 	}
-
-	//Serial.print("left: ");
-	//Serial.println(m_distance_left);
 }
 

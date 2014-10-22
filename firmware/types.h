@@ -9,6 +9,20 @@ typedef uint32_t uint_t;
 typedef int32_t fixed_t;
 typedef int64_t fixed_upscale_t;
 
+typedef struct __attribute__((packed)) point_t {
+public:
+	fixed_t x;
+	fixed_t y;
+
+	point_t() :
+			x(0), y(0) {
+	}
+
+	point_t(fixed_t x, fixed_t y) :
+			x(x), y(y) {
+	}
+} point_t;
+
 #define FIXED_BITS          32
 #define FIXED_WBITS         16
 #define FIXED_FBITS         16
@@ -40,17 +54,15 @@ typedef int64_t fixed_upscale_t;
 #define VAL_9_DIV_10 58982
 
 inline fixed_t FIXED_Mul(fixed_t a, fixed_t b) {
-	fixed_upscale_t temp;
-	temp = fixed_upscale_t(a) * fixed_upscale_t(b); // result type is operand's type
+	fixed_upscale_t temp = fixed_upscale_t(a) * fixed_upscale_t(b); // result type is operand's type
 	temp += FIXED_K; // Rounding; mid values are rounded up
 
 	return fixed_t(temp >> FIXED_FBITS); // Correct by dividing by base
 }
 
 inline fixed_t FIXED_Div(fixed_t a, fixed_t b) {
-	fixed_upscale_t temp;
 	// pre-multiply by the base
-	temp = fixed_upscale_t(fixed_upscale_t(a) << FIXED_FBITS);
+	fixed_upscale_t temp = fixed_upscale_t(fixed_upscale_t(a) << FIXED_FBITS);
 	// So the result will be rounded ; mid values are rounded up.
 	temp += b / 2;
 	return fixed_t(temp / b);

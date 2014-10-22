@@ -9,19 +9,12 @@ typedef uint32_t uint_t;
 typedef int32_t fixed_t;
 typedef int64_t fixed_upscale_t;
 
-typedef struct __attribute__((packed)) point_t {
-public:
-	fixed_t x;
-	fixed_t y;
+struct __attribute__((packed)) point_t {
+	fixed_t x, y;
 
-	point_t() :
-			x(0), y(0) {
-	}
-
-	point_t(fixed_t x, fixed_t y) :
-			x(x), y(y) {
-	}
-} point_t;
+	point_t() : x(0), y(0) {}
+	point_t(fixed_t x, fixed_t y) : x(x), y(y) {}
+};
 
 #define FIXED_BITS          32
 #define FIXED_WBITS         16

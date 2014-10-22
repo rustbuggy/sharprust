@@ -5,6 +5,15 @@
 #include "Hdlc.h"
 #include "mcdriver.h"
 
+// comment out for USB serial
+#define USE_XBEE_FOR_TELEMETRY
+
+#ifdef USE_XBEE_FOR_TELEMETRY
+	#define SERIALDEV Serial3
+#else
+	#define SERIALDEV Serial
+#endif
+
 #define TEENSY_LED          13
 #define IR_LEFT             A9
 #define IR_RIGHT            A8
@@ -41,16 +50,18 @@ MCDriver driver;
 void send_telemetry() {
 	m_tx_len = hdlc.encode((uint8_t*) &telemetry, sizeof(bc_telemetry_packet_t),
 			m_tx_buffer);
-	Serial3.write(m_tx_buffer, m_tx_len);
+	SERIALDEV.write(m_tx_buffer, m_tx_len);
 }
 
 void setup() {
-	Serial3.begin(57600);
+	SERIALDEV.begin(57600);
 
 	steeringservo.attach(STEERING_PWM_PIN);
 	drivingservo.attach(DRIVE_PWM_PIN);
 
-	analogReference (DEFAULT);
+	analogReference(DEFAULT);
+	analogReadAveraging(16);
+	analogReadResolution(10);
 	pinMode(TEENSY_LED, OUTPUT);
 
 	telemetry.header = BC_TELEMETRY;
@@ -70,8 +81,8 @@ void toggle_led() {
 void loop() {
 	toggle_led();
 
-	while (Serial3.available() > 0) {
-		m_rx_len = hdlc.decode(Serial3.read());
+	while (SERIALDEV.available() > 0) {
+		m_rx_len = hdlc.decode(SERIALDEV.read());
 
 		// check if HDLC packet is received
 		if (m_rx_len > 0) {

@@ -4,7 +4,7 @@
 #include "types.h"
 
 // bc means from Buggy to Computer
-// cb means from Computer tp Buggy
+// cb means from Computer to Buggy
 enum {
 	BC_TELEMETRY = 0x01,
 

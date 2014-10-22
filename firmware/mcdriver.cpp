@@ -61,7 +61,7 @@ void MCDriver::calc_mc(bc_telemetry_packet_t& telemetry) {
 
 	// Fill missing telemetry values
 	telemetry.mc_x = FIXED_Mul(VAL_1_DIV_2, a1 + a3 - a2 - a4); // TODO: calculate offset from sensor positioning as well
-	telemetry.mc_y = FIXED_Mul(VAL_1_DIV_3, a1 + a2 + a5); // TODO: calculate offset from sensor positioning as well
+	telemetry.mc_y = FIXED_Mul(VAL_1_DIV_5, a1 + a2 + a5); // TODO: calculate offset from sensor positioning as well
 	telemetry.mc_dist = FIXED_FROM_DOUBLE(
 		sqrt(FIXED_TO_DOUBLE(FIXED_Mul(telemetry.mc_x, telemetry.mc_x) + FIXED_Mul(telemetry.mc_y, telemetry.mc_y)))); // TODO: get rid of double and sqrt
 	telemetry.mc_angle = FIXED_Mul(VAL_RAD_TO_DEG,

@@ -4,6 +4,7 @@
 
 #define STOP 90
 #define NORMAL_FORWARD 105
+#define MAX_FORWARD 120
 #define NORMAL_BACKWARD 65
 
 #ifdef DEBUG
@@ -16,12 +17,17 @@ MCDriver::MCDriver() {
 	min_front = 0;
 
 	maybe_stuck = false;
+	normal_pwm = NORMAL_FORWARD;
 
 	driveCmd.steeringPwm = STOP;
 	driveCmd.drivingPwm = STOP;
 }
 
-void MCDriver::setSteeringAndSpeed(bc_telemetry_packet_t& telemetry) {
+void MCDriver::set_drive_pwm(uint8_t pwm) {
+	normal_pwm = pwm;
+}
+
+void MCDriver::_clamp_steering_and_speed(bc_telemetry_packet_t& telemetry) {
 	// Steering
 	if (driveCmd.steeringPwm > 130) {
 		driveCmd.steeringPwm = 130;
@@ -31,8 +37,8 @@ void MCDriver::setSteeringAndSpeed(bc_telemetry_packet_t& telemetry) {
 	}
 
 	// Speed
-	if (driveCmd.drivingPwm > NORMAL_FORWARD) {
-		driveCmd.drivingPwm = NORMAL_FORWARD;
+	if (driveCmd.drivingPwm > MAX_FORWARD) {
+		driveCmd.drivingPwm = MAX_FORWARD;
 	}
 	else if (driveCmd.drivingPwm < NORMAL_BACKWARD) {
 		driveCmd.drivingPwm = NORMAL_BACKWARD;
@@ -43,7 +49,7 @@ void MCDriver::setSteeringAndSpeed(bc_telemetry_packet_t& telemetry) {
 	telemetry.driving_pwm = driveCmd.drivingPwm;
 }
 
-void MCDriver::calc_mc(bc_telemetry_packet_t& telemetry) {
+void MCDriver::_calc_mc(bc_telemetry_packet_t& telemetry) {
 	// Mass center calculation
 	fixed_t a1 = FIXED_Mul(VAL_SQRT_1_DIV_2, telemetry.ir_front_right);
 	fixed_t a2 = FIXED_Mul(VAL_SQRT_1_DIV_2, telemetry.ir_front_left);
@@ -60,14 +66,15 @@ void MCDriver::calc_mc(bc_telemetry_packet_t& telemetry) {
 	}
 
 	// Fill missing telemetry values
-	telemetry.mc_x = FIXED_Mul(VAL_1_DIV_2, a1 + a3 - a2 - a4); // TODO: calculate offset from sensor positioning as well
+	//telemetry.mc_x = FIXED_Mul(VAL_1_DIV_2, a1 + a3 - a2 - a4); // TODO: calculate offset from sensor positioning as well
+	telemetry.mc_x = a1 + a3 - a2 - a4;
 	telemetry.mc_y = FIXED_Mul(VAL_1_DIV_5, a1 + a2 + a5); // TODO: calculate offset from sensor positioning as well
 	telemetry.mc_dist = FIXED_FROM_DOUBLE(
 		sqrt(FIXED_TO_DOUBLE(FIXED_Mul(telemetry.mc_x, telemetry.mc_x) + FIXED_Mul(telemetry.mc_y, telemetry.mc_y)))); // TODO: get rid of double and sqrt
 	telemetry.mc_angle = FIXED_Mul(VAL_RAD_TO_DEG,
 		FIXED_FROM_DOUBLE(atan2(FIXED_TO_DOUBLE(telemetry.mc_y), FIXED_TO_DOUBLE(telemetry.mc_x)))); // TODO: get rid of double and ata
 	#ifdef DEBUG
-		printf("%2d  %2d  %2d  %2d  %2d  |  x=%4d  y=%4d  d=%9d  a=%9d  |  ", 
+		printf("%2d  %2d  %2d  %2d  %2d  |  x=%4d  y=%4d  d=%9d  a=%9d  |  ",
 			a1, a2, a3, a4, a5,
 			telemetry.mc_x,
 			telemetry.mc_y,
@@ -78,17 +85,17 @@ void MCDriver::calc_mc(bc_telemetry_packet_t& telemetry) {
 }
 
 drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
-	calc_mc(telemetry);
+	_calc_mc(telemetry);
 	maybe_stuck = (FIXED_TO_INT(telemetry.mc_dist) < 10) || (FIXED_TO_INT(min_front) < 10); // replace it with some kind of sensible state machine to get out of stuck state
 
 	switch (state) {
 		case STATE_NORMAL:
 			driveCmd.steeringPwm = 90 - (FIXED_TO_INT(telemetry.mc_angle) - 90);
-			driveCmd.drivingPwm = NORMAL_FORWARD;
+			driveCmd.drivingPwm = normal_pwm;
 
 			if (maybe_stuck) {
 				if (!stuck_timer.running()) {
-					stuck_timer.start(telemetry.time, 3000);
+					stuck_timer.start(telemetry.time, 1000);
 				}
 				else if (stuck_timer.triggered(telemetry.time)) {
 					state = STATE_STUCK;
@@ -105,7 +112,7 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 			driveCmd.drivingPwm = NORMAL_BACKWARD;
 
 			if (!stuck_timer.running()) {
-				stuck_timer.start(telemetry.time, 3000);
+				stuck_timer.start(telemetry.time, 1000);
 			}
 			else if (!maybe_stuck || stuck_timer.triggered(telemetry.time)) {
 				stuck_timer.stop();
@@ -119,8 +126,7 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 			break;
 	}
 
-	setSteeringAndSpeed(telemetry);
+	_clamp_steering_and_speed(telemetry);
 
 	return driveCmd;
 }
-

@@ -41,7 +41,7 @@ HDLC hdlc(m_rx_buffer, 255);
 Servo steeringservo;
 Servo drivingservo;
 
-bool automatic = false;
+bool m_automatic = false;
 
 uint32_t last_time = 0;
 
@@ -79,8 +79,6 @@ void toggle_led() {
 }
 
 void loop() {
-	toggle_led();
-
 	while (SERIALDEV.available() > 0) {
 		m_rx_len = hdlc.decode(SERIALDEV.read());
 
@@ -91,8 +89,11 @@ void loop() {
 			if (CB_MOTOR_COMMAND == header) {
 				cb_motor_command_packet_t* motor =
 						(cb_motor_command_packet_t*) m_rx_buffer;
-				automatic = motor->automatic != 0;
-				if (!automatic) {
+				m_automatic = motor->automatic;
+				if (m_automatic) {
+					driver.set_drive_pwm(motor->drive_pwm);
+				}
+				else {
 					steeringservo.write(motor->steering_pwm);
 					drivingservo.write(motor->drive_pwm);
 				}
@@ -101,16 +102,18 @@ void loop() {
 	}
 
 	telemetry.time = millis();
-	telemetry.ir_left = sharp_left.distance();
-	telemetry.ir_right = sharp_right.distance();
+	// do not use left/right sensor
+	telemetry.ir_left = 10;
+	telemetry.ir_right = 10;
 	telemetry.ir_front_left = sharp_front_left.distance();
 	telemetry.ir_front_right = sharp_front_right.distance();
 	telemetry.ir_front = sharp_front.distance();
 
 	drive_cmd_t& driveCmd = driver.drive(telemetry);
-	if (automatic) {
+	if (m_automatic) {
 		steeringservo.write(driveCmd.steeringPwm);
 		drivingservo.write(driveCmd.drivingPwm);
+		toggle_led();
 	}
 
 	if (telemetry.time > last_time + 20) {

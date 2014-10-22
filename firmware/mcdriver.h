@@ -40,13 +40,15 @@ protected:
 	Timeouter stuck_timer;
 	bool maybe_stuck;
 	fixed_t min_front;
+	uint8_t normal_pwm;
 
-	void calc_mc(bc_telemetry_packet_t& telemetry);
-	void setSteeringAndSpeed(bc_telemetry_packet_t& telemetry);
+	void _calc_mc(bc_telemetry_packet_t& telemetry);
+	void _clamp_steering_and_speed(bc_telemetry_packet_t& telemetry);
 
 public:
 	MCDriver();
 	drive_cmd_t& drive(bc_telemetry_packet_t& telemetry);
+	void set_drive_pwm(uint8_t pwm);
 };
 
 #endif // __MCDRIVER__H

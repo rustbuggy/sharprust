@@ -1,8 +1,8 @@
 #include "mcdriver.h"
 
 #define STOP 90
-#define NORMAL_FORWARD 103
-#define MAX_FORWARD 115
+#define NORMAL_FORWARD 105
+#define MAX_FORWARD 120
 #define NORMAL_BACKWARD 65
 
 #ifdef DEBUG
@@ -121,7 +121,7 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 
 			if (maybe_stuck) {
 				if (!stuck_timer.running()) {
-					stuck_timer.start(telemetry.time, 500);
+					stuck_timer.start(telemetry.time, 1000);
 				}
 				else if (stuck_timer.triggered(telemetry.time)) {
 					state = STATE_STUCK;

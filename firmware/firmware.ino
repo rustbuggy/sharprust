@@ -107,10 +107,10 @@ void loop() {
 	telemetry.ir_front_right = sharp_front_right.distance();
 	telemetry.ir_front = sharp_front.distance();
 
-	drive_cmd_t& driveCmd = driver.drive(telemetry);
+	drive_cmd_t& drive_cmd = driver.drive(telemetry);
 	if (m_automatic) {
-		steeringservo.write(driveCmd.steering_pwm);
-		drivingservo.write(driveCmd.driving_pwm);
+		steeringservo.write(drive_cmd.steering_pwm);
+		drivingservo.write(drive_cmd.driving_pwm);
 		toggle_led();
 	}
 

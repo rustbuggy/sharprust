@@ -78,5 +78,7 @@ struct __attribute__((packed)) point_t {
 	}
 };
 
+#define ABS(x) (x >= 0 ? x : -x)
+
 #endif // __TYPES__H
 

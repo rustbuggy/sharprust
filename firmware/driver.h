@@ -38,7 +38,7 @@ public:
 // Abstract base class
 class Driver {
 protected:
-	drive_cmd_t driveCmd;
+	drive_cmd_t drive_cmd;
 
 public:
 	virtual drive_cmd_t& drive(bc_telemetry_packet_t& telemetry) = 0;

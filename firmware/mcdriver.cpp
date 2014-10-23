@@ -50,35 +50,35 @@ void MCDriver::_clamp_steering_and_speed(bc_telemetry_packet_t& telemetry) {
 }
 
 void MCDriver::_calc_direction(bc_telemetry_packet_t& telemetry) {
-	// left and right 90 degrees from center (y-axis)
-	// front_left and front_right 30 degrees from center (y-axis)
-	fixed_t a1 = FIXED_Mul(VAL_SQRT_1_DIV_2, telemetry.ir_front_left);
-	fixed_t a2 = FIXED_Mul(VAL_SQRT_1_DIV_2, telemetry.ir_front_right);
-
-	l.x = -telemetry.ir_left; // l.y always 0
-	fl.x = -a1 - 163840; // -2.5cm
-	fl.y = a1 + 294912; // +4.5cm
-	f.y = telemetry.ir_front + 327680; // +5cm, f.x always 0
-	fr.x = a2 + 163840; // +2.5cm
-	fr.y = a2 + 294912; // +4.5cm
-	r.x = telemetry.ir_right; // r.y always 0
-
 	/*
-	 // left and right 45 degrees from center (y-axis)
+	 // left and right 90 degrees from center (y-axis)
 	 // front_left and front_right 30 degrees from center (y-axis)
-	 fixed_t a1 = FIXED_Mul(VAL_SQRT_1_DIV_2, telemetry.ir_left);
-	 fixed_t a2 = FIXED_Mul(VAL_SQRT_1_DIV_2, telemetry.ir_right);
+	 fixed_t a1 = FIXED_Mul(VAL_SQRT_1_DIV_2, telemetry.ir_front_left);
+	 fixed_t a2 = FIXED_Mul(VAL_SQRT_1_DIV_2, telemetry.ir_front_right);
 
-	 l.x = -a1 - 163840; // -2.5cm
-	 l.y = a1 + 294912; // +4.5cm
-	 fl.x = -FIXED_Mul(32768, telemetry.ir_front_left); // missing offset
-	 fl.y = FIXED_Mul(56756, telemetry.ir_front_left); // missing offset
+	 l.x = -telemetry.ir_left; // l.y always 0
+	 fl.x = -a1 - 163840; // -2.5cm
+	 fl.y = a1 + 294912; // +4.5cm
 	 f.y = telemetry.ir_front + 327680; // +5cm, f.x always 0
-	 fr.x = FIXED_Mul(32768, telemetry.ir_front_right); // missing offset
-	 fr.y = FIXED_Mul(56756, telemetry.ir_front_right); // missing offset
-	 r.x = a2 + 163840; // +2.5cm
-	 r.y = a2 + 294912; // +4.5cm
+	 fr.x = a2 + 163840; // +2.5cm
+	 fr.y = a2 + 294912; // +4.5cm
+	 r.x = telemetry.ir_right; // r.y always 0
 	 */
+
+	// left and right 45 degrees from center (y-axis)
+	// front_left and front_right 30 degrees from center (y-axis)
+	fixed_t a1 = FIXED_Mul(VAL_SQRT_1_DIV_2, telemetry.ir_left);
+	fixed_t a2 = FIXED_Mul(VAL_SQRT_1_DIV_2, telemetry.ir_right);
+
+	l.x = -a1 - 229376; // -3.5cm
+	l.y = a1 - 65536; // -1.0cm
+	fl.x = -FIXED_Mul(32768, telemetry.ir_front_left) - 131072; // -2.0cm
+	fl.y = FIXED_Mul(56756, telemetry.ir_front_left) + 360448; // +5.5cm
+	f.y = telemetry.ir_front + 360448; // +5.5cm, f.x always 0
+	fr.x = FIXED_Mul(32768, telemetry.ir_front_right) + 131072; // +2.0cm
+	fr.y = FIXED_Mul(56756, telemetry.ir_front_right) + 360448; // +5.5cm
+	r.x = a2 + 229376; // +3.5cm
+	r.y = a2 - 65536; // -1.0cm
 
 	min_front = fl.y;
 	if (min_front > f.y) {
@@ -124,19 +124,19 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 		case STATE_NORMAL:
 			// steering calculations
 			/*
-			if ((last_steering < 0 && steering >= 0) || (last_steering >= 0 && steering < 0)) {
-				steer_correct = -max_steering / 2;
-				steering += steer_correct;
-				max_steering = steering;
-			}
-			else {
-				steer_correct -= steer_correct > 0 ? 1 : -1;
-				steering += steer_correct;
-				if (ABS(steering) > ABS(max_steering)) {
-					max_steering = steering;
-				}
-			}
-			*/
+			 if ((last_steering < 0 && steering >= 0) || (last_steering >= 0 && steering < 0)) {
+			 steer_correct = -max_steering / 2;
+			 steering += steer_correct;
+			 max_steering = steering;
+			 }
+			 else {
+			 steer_correct -= steer_correct > 0 ? 1 : -1;
+			 steering += steer_correct;
+			 if (ABS(steering) > ABS(max_steering)) {
+			 max_steering = steering;
+			 }
+			 }
+			 */
 			drive_cmd.steering_pwm = 90 - steering;
 
 			// speed calculations

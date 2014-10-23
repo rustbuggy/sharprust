@@ -29,11 +29,11 @@ void MCDriver::set_drive_pwm(uint8_t pwm) {
 
 void MCDriver::_clamp_steering_and_speed(bc_telemetry_packet_t& telemetry) {
 	// Steering
-	if (driveCmd.steering_pwm > 135) {
-		driveCmd.steering_pwm = 135;
+	if (driveCmd.steering_pwm > 150) {
+		driveCmd.steering_pwm = 150;
 	}
-	else if (driveCmd.steering_pwm < 45) {
-		driveCmd.steering_pwm = 45;
+	else if (driveCmd.steering_pwm < 30) {
+		driveCmd.steering_pwm = 30;
 	}
 
 	// Speed
@@ -97,16 +97,16 @@ void MCDriver::_calc_direction(bc_telemetry_packet_t& telemetry) {
 
 drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 	_calc_direction(telemetry);
-	maybe_stuck = (FIXED_TO_INT(telemetry.mc_dist) < 10) || (FIXED_TO_INT(min_front) < 10);
+	maybe_stuck = (FIXED_TO_INT(telemetry.mc_dist) < 10) || (FIXED_TO_INT(min_front) < 20);
 
 	switch (state) {
 		case STATE_NORMAL:
-			driveCmd.steering_pwm = 90 - (FIXED_TO_INT(telemetry.mc_angle) - 90);
+			driveCmd.steering_pwm = 90 - 2*(FIXED_TO_INT(telemetry.mc_angle) - 90);
 			driveCmd.driving_pwm = normal_pwm;
 
 			if (maybe_stuck) {
 				if (!stuck_timer.running()) {
-					stuck_timer.start(telemetry.time, 1000);
+					stuck_timer.start(telemetry.time, 500);
 				}
 				else if (stuck_timer.triggered(telemetry.time)) {
 					state = STATE_STUCK;
@@ -119,11 +119,11 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 			break;
 
 		case STATE_STUCK:
-			driveCmd.steering_pwm = 90 + (FIXED_TO_INT(telemetry.mc_angle) - 90);
+			driveCmd.steering_pwm = 90 + 2*(FIXED_TO_INT(telemetry.mc_angle) - 90);
 			driveCmd.driving_pwm = NORMAL_BACKWARD;
 
 			if (!stuck_timer.running()) {
-				stuck_timer.start(telemetry.time, 1000);
+				stuck_timer.start(telemetry.time, 2000);
 			}
 			else if (!maybe_stuck || stuck_timer.triggered(telemetry.time)) {
 				stuck_timer.stop();

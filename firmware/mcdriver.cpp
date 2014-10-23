@@ -1,9 +1,11 @@
 #include "mcdriver.h"
 
-#define STOP 90
+#define STEERING_NEUTRAL 90
+#define STOP 95
 #define NORMAL_FORWARD 105
 #define MAX_FORWARD 120
 #define NORMAL_BACKWARD 65
+#define MIN_BACKWARD 0
 
 #ifdef DEBUG
 #include "stdio.h"
@@ -16,11 +18,13 @@ MCDriver::MCDriver() {
 
 	maybe_stuck = false;
 	normal_pwm = MAX_FORWARD;
-	last_steering = 0;
-	max_steering = 0;
 
-	drive_cmd.steering_pwm = STOP;
+	drive_cmd.steering_pwm = STEERING_NEUTRAL;
 	drive_cmd.driving_pwm = STOP;
+
+	steering = 0;
+	last_speed_add = 0;
+	last_speed_add_timer.start(1, 1);
 }
 
 void MCDriver::set_drive_pwm(uint8_t pwm) {
@@ -40,8 +44,8 @@ void MCDriver::_clamp_steering_and_speed(bc_telemetry_packet_t& telemetry) {
 	if (drive_cmd.driving_pwm > MAX_FORWARD) {
 		drive_cmd.driving_pwm = MAX_FORWARD;
 	}
-	else if (drive_cmd.driving_pwm < NORMAL_BACKWARD) {
-		drive_cmd.driving_pwm = NORMAL_BACKWARD;
+	else if (drive_cmd.driving_pwm < MIN_BACKWARD) {
+		drive_cmd.driving_pwm = MIN_BACKWARD;
 	}
 
 	// Fill missing telemetry values
@@ -123,24 +127,12 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 	switch (state) {
 		case STATE_NORMAL:
 			// steering calculations
-			/*
-			 if ((last_steering < 0 && steering >= 0) || (last_steering >= 0 && steering < 0)) {
-			 steer_correct = -max_steering / 2;
-			 steering += steer_correct;
-			 max_steering = steering;
-			 }
-			 else {
-			 steer_correct -= steer_correct > 0 ? 1 : -1;
-			 steering += steer_correct;
-			 if (ABS(steering) > ABS(max_steering)) {
-			 max_steering = steering;
-			 }
-			 }
-			 */
 			drive_cmd.steering_pwm = 90 - steering;
 
 			// speed calculations
 			speed_add = FIXED_FROM_INT(normal_pwm - NORMAL_FORWARD);
+
+			// normal operation
 			abs_turn = ABS(turn);
 			front_fact = FIXED_Mul(2949120 - abs_turn, 1456); // correct speed by turn angle
 			angle_fact = FIXED_Mul(telemetry.ir_front - 1310720, 655); // correct speed by front distance
@@ -159,13 +151,27 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 			speed_add = FIXED_Mul(angle_fact, FIXED_Mul(front_fact, speed_add));
 			drive_cmd.driving_pwm = NORMAL_FORWARD + FIXED_TO_INT(speed_add);
 
+			// for abrupt lowering of speed go to braking state
+			if (speed_add < last_speed_add - 327680) {
+				stuck_timer.stop();
+				last_speed_add = speed_add;
+				drive_cmd.driving_pwm = MIN_BACKWARD;
+				state = STATE_BRAKING;
+				break;
+			}
+			//if (last_speed_add_timer.triggered(telemetry.time)) {
+			last_speed_add = speed_add;
+			//last_speed_add_timer.start(telemetry.time, 15);
+			//}
+
+			// stuck countdown
 			if (maybe_stuck) {
 				if (!stuck_timer.running()) {
 					stuck_timer.start(telemetry.time, 1000);
 				}
 				else if (stuck_timer.triggered(telemetry.time)) {
-					state = STATE_STUCK;
 					stuck_timer.stop();
+					state = STATE_BACKING;
 				}
 			}
 			else {
@@ -173,14 +179,63 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 			}
 			break;
 
-		case STATE_STUCK:
+                /*
+		case STATE_START_BACKING_1:
+			drive_cmd.steering_pwm = STEERING_NEUTRAL;
+			drive_cmd.driving_pwm = NORMAL_BACKWARD;
+
+			if (!stuck_timer.running()) {
+				stuck_timer.start(telemetry.time, 60);
+			}
+			else if (!maybe_stuck) {
+				stuck_timer.stop();
+				state = STATE_NORMAL;
+			}
+			else if (stuck_timer.triggered(telemetry.time)) {
+				stuck_timer.stop();
+				state = STATE_START_BACKING_2;
+			}
+			break;
+
+		case STATE_START_BACKING_2:
+			drive_cmd.steering_pwm = STEERING_NEUTRAL;
+			drive_cmd.driving_pwm = STOP;
+
+			if (!stuck_timer.running()) {
+				stuck_timer.start(telemetry.time, 60);
+			}
+			else if (!maybe_stuck) {
+				stuck_timer.stop();
+				state = STATE_NORMAL;
+			}
+			else if (stuck_timer.triggered(telemetry.time)) {
+				stuck_timer.stop();
+				state = STATE_BACKING;
+			}
+			break;
+                */
+
+		case STATE_BACKING:
 			drive_cmd.steering_pwm = 90 + steering;
 			drive_cmd.driving_pwm = NORMAL_BACKWARD;
 
 			if (!stuck_timer.running()) {
 				stuck_timer.start(telemetry.time, 2000);
 			}
-			else if (!maybe_stuck || stuck_timer.triggered(telemetry.time)) {
+			if (!maybe_stuck || stuck_timer.triggered(telemetry.time)) {
+				stuck_timer.stop();
+				state = STATE_NORMAL;
+			}
+			break;
+
+		case STATE_BRAKING:
+			drive_cmd.steering_pwm = 90 - steering;
+			drive_cmd.driving_pwm = NORMAL_BACKWARD;
+
+			if (!stuck_timer.running()) {
+				stuck_timer.start(telemetry.time, 100);
+			}
+			else if (stuck_timer.triggered(telemetry.time)) {
 				stuck_timer.stop();
 				state = STATE_NORMAL;
 			}
@@ -191,8 +246,6 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 			state = STATE_NORMAL;
 			break;
 	}
-
-	last_steering = steering;
 
 	_clamp_steering_and_speed(telemetry);
 

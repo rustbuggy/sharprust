@@ -1,7 +1,7 @@
 #ifndef HDLC_H
 #define HDLC_H
 
-#include "Arduino.h"
+#include "types.h"
 
 enum {
 	HDLC_DELIM = 0x7e, HDLC_ESC = 0x7d

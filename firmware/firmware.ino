@@ -9,9 +9,9 @@
 #define USE_XBEE_FOR_TELEMETRY
 
 #ifdef USE_XBEE_FOR_TELEMETRY
-	#define SERIALDEV Serial3
+#define SERIALDEV Serial3
 #else
-	#define SERIALDEV Serial
+#define SERIALDEV Serial
 #endif
 
 #define TEENSY_LED          13

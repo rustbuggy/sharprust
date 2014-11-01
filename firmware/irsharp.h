@@ -1,16 +1,15 @@
 #ifndef __IRSHARP__H
 #define __IRSHARP__H
 
-#include "Arduino.h"
 #include "kalman.h"
 
 class IRSharp {
 public:
-	IRSharp(int irPin);
-	fixed_t distance();
+	IRSharp(int16_t irPin);
+	fixed& distance();
 
 private:
-	int irPin;
+	int16_t irPin;
 	SingleKalmanVar dist;
 };
 

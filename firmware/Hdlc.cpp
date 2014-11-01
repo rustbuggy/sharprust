@@ -1,8 +1,7 @@
-#include "Arduino.h"
 #include "Hdlc.h"
 
 HDLC::HDLC(uint8_t* decoder_buf, uint8_t len) {
-	_dec_tail = NULL;
+	_dec_tail = 0;
 
 	_dec_checksum = 0;
 	_dec_prev_byte = 0;

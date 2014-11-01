@@ -1,14 +1,15 @@
-#include "Arduino.h"
 #include "irsharp.h"
+
+#include "Arduino.h"
 #include "lookups.h"
 
-IRSharp::IRSharp(int irPin) :
-		dist(FIXED_FROM_INT(40), FIXED_FROM_INT(10), FIXED_FROM_INT(1), FIXED_FROM_INT(5)), irPin(irPin) {
+IRSharp::IRSharp(int16_t irPin) :
+irPin(irPin), dist(fixed(40), fixed(10), fixed(1), fixed(5)) {
 	pinMode(irPin, INPUT);
 }
 
 // GP2Y0A21Y
-fixed_t IRSharp::distance() {
-	return dist.stepKalman(FIXED_FROM_INT(irLookup[analogRead(irPin)]));
+fixed& IRSharp::distance() {
+	return dist.stepKalman(irLookup[analogRead(irPin)]);
 }
 

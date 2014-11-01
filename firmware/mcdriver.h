@@ -13,12 +13,12 @@ protected:
 	mc_driver_states_t state;
 	Timeouter stuck_timer, last_speed_add_timer;
 	bool maybe_stuck;
-	fixed_t min_front;
+	fixed min_front;
 	uint8_t normal_pwm;
 
 	point_t l, fl, f, fr, r;
 	int32_t steering;
-	fixed_t last_speed_add;
+	fixed last_speed_add;
 
 	void _calc_direction(bc_telemetry_packet_t& telemetry);
 	void _clamp_steering_and_speed(bc_telemetry_packet_t& telemetry);

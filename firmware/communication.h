@@ -7,22 +7,21 @@
 // cb means from Computer to Buggy
 enum {
 	BC_TELEMETRY = 0x01,
-
-	CB_MOTOR_COMMAND = 0x02,
+	CB_MOTOR_COMMAND = 0x02
 };
 
 typedef struct
 	__attribute__((packed)) {
 		uint8_t header; // BC_TELEMETRY
 		uint32_t time;
-		fixed_t ir_left;
-		fixed_t ir_right;
-		fixed_t ir_front_left;
-		fixed_t ir_front_right;
-		fixed_t ir_front;
+		fixed ir_left;
+		fixed ir_right;
+		fixed ir_front_left;
+		fixed ir_front_right;
+		fixed ir_front;
 		point_t mc;
-		fixed_t mc_dist;
-		fixed_t mc_angle;
+		fixed mc_dist;
+		fixed mc_angle;
 
 		int32_t steering_pwm;
 		int32_t driving_pwm;

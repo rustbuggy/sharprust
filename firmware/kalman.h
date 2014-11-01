@@ -7,15 +7,12 @@
 
 class SingleKalmanVar {
 private:
-	fixed_t Sz; // Q
-	fixed_t Sw; // R
-	fixed_t P;
-	fixed_t x;
+	fixed Q, R, P, x;
+	fixed P_temp, K;
 
 public:
-	SingleKalmanVar(fixed_t x, fixed_t P, fixed_t Sz, fixed_t Sw);
-	void reset(fixed_t x, fixed_t P, fixed_t Sz, fixed_t Sw);
-	fixed_t stepKalman(fixed_t measurement);
+	SingleKalmanVar(const fixed& x, const fixed& P, const fixed& Q, const fixed& R);
+	fixed& stepKalman(fixed measurement);
 };
 
 #endif // __KALMAN__H

@@ -14,7 +14,11 @@
 #define SERIALDEV Serial
 #endif
 
+#define START_BUTTON_DEBOUNCE_TIME_MS        250
+
 #define TEENSY_LED          13
+#define START_BUTTON        14
+
 #define IR_LEFT             A9
 #define IR_RIGHT            A8
 #define IR_FRONT_LEFT       A7
@@ -42,8 +46,11 @@ Servo steeringservo;
 Servo drivingservo;
 
 bool m_automatic = false;
-
 uint32_t last_time = 0;
+
+bool m_button_press = false;
+bool m_button_active = false;
+bool m_last_button_time = 0;
 
 MCDriver driver;
 
@@ -63,7 +70,18 @@ void setup() {
 	analogReadResolution(10);
 	pinMode(TEENSY_LED, OUTPUT);
 
+	pinMode(START_BUTTON, INPUT_PULLUP);
+	attachInterrupt(START_BUTTON, button_service, FALLING);
+
 	telemetry.header = BC_TELEMETRY;
+}
+
+void button_service() {
+	if (m_button_active) {
+		m_button_press = true;
+		m_button_active = false;
+		m_last_button_time = millis();
+	}
 }
 
 void toggle_led() {
@@ -79,6 +97,16 @@ void toggle_led() {
 }
 
 void loop() {
+	if (m_button_press) {
+		m_button_press = false;
+		m_automatic = true;
+	}
+
+	// handle debounce
+	if (!m_button_active && ((millis() - m_last_button_time) > START_BUTTON_DEBOUNCE_TIME_MS)) {
+		m_button_active = true;
+	}
+
 	while (SERIALDEV.available() > 0) {
 		m_rx_len = hdlc.decode(SERIALDEV.read());
 

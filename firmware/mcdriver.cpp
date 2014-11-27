@@ -123,8 +123,8 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 			speed_add = fixed(normal_pwm - NORMAL_FORWARD);
 
 			// normal operation
-			front_fact = (45 - turn.abs()) * VAL_1_DIV_45; // correct speed by turn angle
-			angle_fact = (telemetry.ir_front - 20) * 0.01; // correct speed by front distance
+			front_fact = (telemetry.ir_front - 20) * 0.01; // correct speed by front distance
+			angle_fact = (45 - turn.abs()) * VAL_1_DIV_45; // correct speed by turn angle
 			if (front_fact < 0) {
 				front_fact = 0;
 			}

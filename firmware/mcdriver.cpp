@@ -18,6 +18,7 @@ static const fixed VAL_0_5(0.5);
 static const fixed VAL_1_0(1);
 static const fixed VAL_2_0(2);
 static const fixed VAL_3_0(3);
+static const fixed VAL_5_0(5);
 static const fixed VAL_6_0(6);
 
 #ifdef DEBUG
@@ -66,7 +67,7 @@ void MCDriver::_clamp_steering_and_speed(bc_telemetry_packet_t& telemetry) {
 void MCDriver::_calc_direction(bc_telemetry_packet_t& telemetry) {
 	// left and right 60 degrees from center (y-axis)
 	// front_left and front_right 30 degrees from center (y-axis)
-	// coordinate zero between left and right sensor
+	// coordinates zero between left and right sensor
 	l.x = -(telemetry.ir_left * VAL_SQRT_3_DIV_2 + VAL_3_0);
 	l.y = telemetry.ir_left * VAL_0_5;
 	fl.x = -(telemetry.ir_front_left * VAL_0_5 + VAL_2_0);
@@ -77,6 +78,21 @@ void MCDriver::_calc_direction(bc_telemetry_packet_t& telemetry) {
 	r.x = telemetry.ir_right * VAL_SQRT_3_DIV_2 + VAL_3_0;
 	r.y = telemetry.ir_right * VAL_0_5;
 
+	/*
+	// left and right 60 degrees from center (y-axis)
+	// front_left and front_right 30 degrees from center (y-axis)
+	// coordinates zero between front left and right sensors
+	l.x = -(telemetry.ir_left * VAL_SQRT_3_DIV_2 + VAL_3_0);
+	l.y = telemetry.ir_left * VAL_0_5 - VAL_6_0;
+	fl.x = -(telemetry.ir_front_left * VAL_0_5 + VAL_2_0);
+	fl.y = telemetry.ir_front_left * VAL_SQRT_3_DIV_2;
+	f.y = telemetry.ir_front - VAL_5_0; // f.x always 0
+	fr.x = telemetry.ir_front_right * VAL_0_5 + VAL_2_0;
+	fr.y = telemetry.ir_front_right * VAL_SQRT_3_DIV_2;
+	r.x = telemetry.ir_right * VAL_SQRT_3_DIV_2 + VAL_3_0;
+	r.y = telemetry.ir_right * VAL_0_5 - VAL_6_0;
+	*/
+
 	min_front = fl.y;
 	if (min_front > f.y) {
 		min_front = f.y;
@@ -85,22 +101,24 @@ void MCDriver::_calc_direction(bc_telemetry_packet_t& telemetry) {
 		min_front = fr.y;
 	}
 
-	// Fill missing telemetry values
+	// calculate weights
 	inv_msum = 1 / (telemetry.ir_left + telemetry.ir_front_left + telemetry.ir_front + telemetry.ir_front_right + telemetry.ir_right);
 	lm = telemetry.ir_left * inv_msum;
 	flm = telemetry.ir_front_left * inv_msum;
 	fm = telemetry.ir_front * inv_msum;
 	frm = telemetry.ir_front_right * inv_msum;
 	rm = telemetry.ir_right * inv_msum;
+
+	// Fill missing telemetry values
 	telemetry.mc.x = (lm * l.x) + (flm * fl.x) + (frm * fr.x) + (rm * r.x);
 	telemetry.mc.y = (lm * l.y) + (flm * fl.y) + (fm * f.y) + (frm * fr.y) + (rm * r.y);
 
 	/*
-	 if (telemetry.ir_left < 100 || telemetry.ir_front_left < 100) {
+	 if (telemetry.ir_left < 100 && telemetry.ir_front_left < 100) {
 	 telemetry.mc.x += (fl.x - l.x);
 	 telemetry.mc.y += (fl.y - l.y);
 	 }
-	 if (telemetry.ir_right < 100 || telemetry.ir_front_right < 100) {
+	 if (telemetry.ir_right < 100 && telemetry.ir_front_right < 100) {
 	 telemetry.mc.x += (fr.x - r.x);
 	 telemetry.mc.y += (fr.y - r.y);
 	 }

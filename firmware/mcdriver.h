@@ -17,6 +17,7 @@ protected:
 	uint8_t normal_pwm;
 
 	point_t l, fl, f, fr, r;
+	fixed lm, flm, fm, frm, rm, inv_msum;
 	int32_t steering;
 	fixed last_speed_add;
 

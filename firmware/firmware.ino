@@ -20,10 +20,10 @@
 #define START_BUTTON        14
 
 #define IR_LEFT             A9
-#define IR_RIGHT            A8
-#define IR_FRONT_LEFT       A7
-#define IR_FRONT_RIGHT      A6
+#define IR_FRONT_LEFT       A8
 #define IR_FRONT            A5
+#define IR_FRONT_RIGHT      A7
+#define IR_RIGHT            A6
 
 #define STEERING_PWM_PIN    4
 #define DRIVE_PWM_PIN       3

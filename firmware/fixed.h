@@ -285,6 +285,15 @@ public:
 	fixed abs() {
 		return fixed(value >= 0 ? value : -value, true);
 	}
+
+	fixed clamp(const fixed& min, const fixed& max) {
+		fixed v = fixed(value, true);
+		if (v < min)
+			v = min;
+		if (v > max)
+			v = max;
+		return v;
+	}
 };
 
 fixed operator+(const int a, const fixed& b);

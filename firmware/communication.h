@@ -25,6 +25,8 @@ typedef struct
 
 		int32_t steering_pwm;
 		int32_t driving_pwm;
+
+		uint16_t battery;
 	} bc_telemetry_packet_t;
 
 	typedef struct

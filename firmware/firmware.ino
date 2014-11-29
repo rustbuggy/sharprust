@@ -18,7 +18,7 @@
 #define START_DELAY_MS                      5050
 
 #define BATTERY_CHECK_INTERVAL_MS           1000
-#define BATTERY_LOW_MILLI_VOLTAGE           7500
+#define BATTERY_LOW_MILLI_VOLTAGE           7700
 
 #define TEENSY_LED          13 // (LED)
 #define START_BUTTON        14 // A0
@@ -196,7 +196,8 @@ void loop() {
 
 	if (m_time > m_last_battery_check_time + BATTERY_CHECK_INTERVAL_MS) {
 		m_last_battery_check_time = m_time;
-		if (battery_voltage() < BATTERY_LOW_MILLI_VOLTAGE) {
+		telemetry.battery = uint16_t(battery_voltage());
+		if (telemetry.battery < BATTERY_LOW_MILLI_VOLTAGE) {
 			digitalWrite(RED_LED, HIGH);
 		}
 		else {

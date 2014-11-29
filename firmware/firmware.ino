@@ -20,10 +20,10 @@
 #define BATTERY_CHECK_INTERVAL_MS           1000
 #define BATTERY_LOW_MILLI_VOLTAGE           7500
 
-#define TEENSY_LED          13
-#define START_BUTTON        14
-#define GREEN_LED           16
-#define RED_LED             17
+#define TEENSY_LED          13 // (LED)
+#define START_BUTTON        14 // A0
+#define GREEN_LED           16 // A2
+#define RED_LED             15 // A1
 
 #define BATTERY             A4
 
@@ -83,7 +83,6 @@ void setup() {
 	analogReadResolution(10);
 
 	pinMode(TEENSY_LED, OUTPUT);
-	digitalWrite(TEENSY_LED, HIGH);
 	pinMode(GREEN_LED, OUTPUT);
 	pinMode(RED_LED, OUTPUT);
 	pinMode(BATTERY, INPUT);
@@ -137,6 +136,7 @@ void loop() {
 		m_countdown = true;
 		m_countdown_start_time = m_time;
 
+		digitalWrite(TEENSY_LED, HIGH);
 		digitalWrite(GREEN_LED, HIGH);
 	}
 
@@ -148,6 +148,9 @@ void loop() {
 	// ready to race!?
 	if (m_countdown && (m_time > m_countdown_start_time +  START_DELAY_MS)) {
 		m_button_active = true;
+		m_countdown = false;
+
+		driver.reset();
 		m_automatic = true;
 	}
 

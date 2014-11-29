@@ -41,6 +41,7 @@ protected:
 	drive_cmd_t drive_cmd;
 
 public:
+	virtual void reset() = 0;
 	virtual drive_cmd_t& drive(bc_telemetry_packet_t& telemetry) = 0;
 };
 

@@ -14,10 +14,18 @@
 #define SERIALDEV Serial
 #endif
 
-#define START_BUTTON_DEBOUNCE_TIME_MS        250
+#define START_BUTTON_DEBOUNCE_TIME_MS       250
+#define START_DELAY_MS                      5050
+
+#define BATTERY_CHECK_INTERVAL_MS           1000
+#define BATTERY_LOW_MILLI_VOLTAGE           7500
 
 #define TEENSY_LED          13
 #define START_BUTTON        14
+#define GREEN_LED           16
+#define RED_LED             17
+
+#define BATTERY             A4
 
 #define IR_LEFT             A9
 #define IR_FRONT_LEFT       A8
@@ -46,11 +54,16 @@ Servo steeringservo;
 Servo drivingservo;
 
 bool m_automatic = false;
-uint32_t last_time = 0;
+uint32_t m_last_telemetry_time = 0;
 
 bool m_button_press = false;
-bool m_button_active = false;
-bool m_last_button_time = 0;
+bool m_button_active = true;
+uint32_t m_last_button_time = 0;
+bool m_countdown = false;
+uint32_t m_countdown_start_time = 0;
+
+uint32_t m_time;
+uint32_t m_last_battery_check_time = 0;
 
 MCDriver driver;
 
@@ -68,10 +81,15 @@ void setup() {
 	analogReference (DEFAULT);
 	analogReadAveraging(16);
 	analogReadResolution(10);
+
 	pinMode(TEENSY_LED, OUTPUT);
+	digitalWrite(TEENSY_LED, HIGH);
+	pinMode(GREEN_LED, OUTPUT);
+	pinMode(RED_LED, OUTPUT);
+	pinMode(BATTERY, INPUT);
 
 	pinMode(START_BUTTON, INPUT_PULLUP);
-	attachInterrupt(START_BUTTON, button_service, FALLING);
+	attachInterrupt(START_BUTTON, button_service, RISING);
 
 	telemetry.header = BC_TELEMETRY;
 }
@@ -84,27 +102,53 @@ void button_service() {
 	}
 }
 
-void toggle_led() {
+void toggle_led(uint8_t led) {
 	static bool ledon = true;
 	if (ledon) {
 		ledon = false;
-		digitalWrite(TEENSY_LED, HIGH);
+		digitalWrite(led, HIGH);
 	}
 	else {
 		ledon = true;
-		digitalWrite(TEENSY_LED, LOW);
+		digitalWrite(led, LOW);
 	}
 }
 
+void blink_automatic_mode() {
+	static uint32_t last_blink;
+	if (millis() - last_blink > 125) {
+		toggle_led(TEENSY_LED);
+		last_blink = millis();
+	}
+}
+
+uint32_t battery_voltage() {
+	const uint32_t vref = 3600000; // 3.6 V
+	const uint32_t voltage_divider = 2710; // divides 2.7 times
+	return vref/1024 * analogRead(BATTERY) * (uint64_t)voltage_divider/1000000;
+}
+
 void loop() {
+	m_time = millis();
+
 	if (m_button_press) {
 		m_button_press = false;
-		m_automatic = true;
+
+		m_countdown = true;
+		m_countdown_start_time = m_time;
+
+		digitalWrite(GREEN_LED, HIGH);
 	}
 
-	// handle debounce
-	if (!m_button_active && ((millis() - m_last_button_time) > START_BUTTON_DEBOUNCE_TIME_MS)) {
+	// handle button debounce
+	if (!m_button_active && (m_time > m_last_button_time +  START_BUTTON_DEBOUNCE_TIME_MS)) {
 		m_button_active = true;
+	}
+
+	// ready to race!?
+	if (m_countdown && (m_time > m_countdown_start_time +  START_DELAY_MS)) {
+		m_button_active = true;
+		m_automatic = true;
 	}
 
 	while (SERIALDEV.available() > 0) {
@@ -128,7 +172,7 @@ void loop() {
 		}
 	}
 
-	telemetry.time = millis();
+	telemetry.time = m_time;
 	telemetry.ir_left = sharp_left.distance();
 	telemetry.ir_right = sharp_right.distance();
 	telemetry.ir_front_left = sharp_front_left.distance();
@@ -139,12 +183,22 @@ void loop() {
 	if (m_automatic) {
 		steeringservo.write(drive_cmd.steering_pwm);
 		drivingservo.write(drive_cmd.driving_pwm);
-		toggle_led();
+		blink_automatic_mode();
 	}
 
-	if (telemetry.time > last_time + 20) {
+	if (m_time > m_last_telemetry_time + 20) {
 		send_telemetry();
-		last_time = telemetry.time;
+		m_last_telemetry_time = m_time;
+	}
+
+	if (m_time > m_last_battery_check_time + BATTERY_CHECK_INTERVAL_MS) {
+		m_last_battery_check_time = m_time;
+		if (battery_voltage() < BATTERY_LOW_MILLI_VOLTAGE) {
+			digitalWrite(RED_LED, HIGH);
+		}
+		else {
+			digitalWrite(RED_LED, LOW);
+		}
 	}
 }
 

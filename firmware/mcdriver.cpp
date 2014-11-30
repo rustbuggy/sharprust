@@ -253,7 +253,7 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 			}
 
 			// for abrupt lowering of speed go to braking state
-			if (last_speed_add < speed_add - BRAKING_THRES) {
+			if (last_speed_add - speed_add > BRAKING_THRES) {
 				stuck_timer.stop();
 				last_speed_add = speed_add;
 				drive_cmd.driving_pwm = MIN_ALLOWED_BACKWARD;

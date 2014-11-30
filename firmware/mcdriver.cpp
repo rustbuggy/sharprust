@@ -22,8 +22,9 @@ static const fixed VAL_1_DIV_45(0.02222222222222222222222222222222);
 
 static const fixed VAL_1_DIV_128(512, true);
 
+static const fixed VAL_FRONT_MIN_FACT(0.3);
+
 static const fixed VAL_0_0(0);
-static const fixed VAL_0_15(0.15);
 static const fixed VAL_0_5(0.5);
 static const fixed VAL_1_0(1);
 //static const fixed VAL_2_0(2);
@@ -208,7 +209,7 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 
 	//maybe_stuck = (telemetry.mc_dist < 10) || (min_front < 20);
 	//maybe_stuck = (min_front < 10);
-	maybe_stuck = ssum > 1;
+	maybe_stuck = (ssum > 2) || (telemetry.ir_front < 20);
 
 	// steering calculations
 	turn = telemetry.mc_angle - 90;
@@ -229,7 +230,7 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 
 	// speed calculations
 	front_fact = (telemetry.ir_front - 25) * 0.01; // correct speed by front distance
-	front_fact = front_fact.clamp(VAL_0_15, VAL_1_0);
+	front_fact = front_fact.clamp(VAL_FRONT_MIN_FACT, VAL_1_0);
 	angle_fact = (30 - turn.abs()) * VAL_1_DIV_45; // correct speed by turn angle
 	angle_fact = angle_fact.clamp(VAL_0_0, VAL_1_0);
 	speed_add = fixed(normal_pwm - NORMAL_FORWARD);

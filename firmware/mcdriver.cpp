@@ -5,13 +5,13 @@
 #define STEERING_NEUTRAL 90
 #define STOP 95
 #define NORMAL_FORWARD 104
-#define MAX_FORWARD 125
-#define BREAKOUT_FORWARD 115
-#define MAX_ALLOWED_FORWARD 125
+#define MAX_FORWARD 116
+#define BREAKOUT_FORWARD 120
+#define MAX_ALLOWED_FORWARD 116
 #define NORMAL_BACKWARD 40
 #define MIN_ALLOWED_BACKWARD 40
 
-#define STUCK_THRES 10
+#define STUCK_THRES 12
 #define STUCK_COUNT 1000
 
 #define BRAKING_THRES ((MAX_FORWARD - NORMAL_FORWARD) / 4 + 0)//1)
@@ -23,6 +23,7 @@ static const fixed VAL_1_DIV_45(0.02222222222222222222222222222222);
 static const fixed VAL_1_DIV_128(512, true);
 
 static const fixed VAL_0_0(0);
+static const fixed VAL_0_15(0.15);
 static const fixed VAL_0_5(0.5);
 static const fixed VAL_1_0(1);
 //static const fixed VAL_2_0(2);
@@ -207,7 +208,7 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 
 	//maybe_stuck = (telemetry.mc_dist < 10) || (min_front < 20);
 	//maybe_stuck = (min_front < 10);
-	maybe_stuck = ssum > 2;
+	maybe_stuck = ssum > 1;
 
 	// steering calculations
 	turn = telemetry.mc_angle - 90;
@@ -228,7 +229,7 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 
 	// speed calculations
 	front_fact = (telemetry.ir_front - 25) * 0.01; // correct speed by front distance
-	front_fact = front_fact.clamp(VAL_0_0, VAL_1_0);
+	front_fact = front_fact.clamp(VAL_0_15, VAL_1_0);
 	angle_fact = (30 - turn.abs()) * VAL_1_DIV_45; // correct speed by turn angle
 	angle_fact = angle_fact.clamp(VAL_0_0, VAL_1_0);
 	speed_add = fixed(normal_pwm - NORMAL_FORWARD);

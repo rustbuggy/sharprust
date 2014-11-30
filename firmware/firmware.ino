@@ -194,10 +194,11 @@ void loop() {
 		m_last_telemetry_time = m_time;
 	}
 
+	
 	if (m_time > m_last_battery_check_time + BATTERY_CHECK_INTERVAL_MS) {
 		m_last_battery_check_time = m_time;
-		telemetry.battery = uint16_t(battery_voltage());
-		if (telemetry.battery < BATTERY_LOW_MILLI_VOLTAGE) {
+		//telemetry.battery = uint16_t(battery_voltage());
+		if (battery_voltage() < BATTERY_LOW_MILLI_VOLTAGE) {
 			digitalWrite(RED_LED, HIGH);
 		}
 		else {

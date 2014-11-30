@@ -5,9 +5,9 @@
 #define STEERING_NEUTRAL 90
 #define STOP 95
 #define NORMAL_FORWARD 104
-#define MAX_FORWARD 116
-#define BREAKOUT_FORWARD 120
-#define MAX_ALLOWED_FORWARD 116
+#define MAX_FORWARD 120
+#define BREAKOUT_FORWARD 115
+#define MAX_ALLOWED_FORWARD 120
 #define NORMAL_BACKWARD 40
 #define MIN_ALLOWED_BACKWARD 40
 
@@ -22,7 +22,7 @@ static const fixed VAL_1_DIV_45(0.02222222222222222222222222222222);
 
 static const fixed VAL_1_DIV_128(512, true);
 
-static const fixed VAL_FRONT_MIN_FACT(0.3);
+static const fixed VAL_FRONT_MIN_FACT(0.2);
 
 static const fixed VAL_0_0(0);
 static const fixed VAL_0_5(0.5);
@@ -34,6 +34,8 @@ static const fixed VAL_3_5(3.5);
 static const fixed VAL_4_0(4);
 static const fixed VAL_5_0(5);
 //static const fixed VAL_6_0(6);
+
+static const fixed FRONT_MIN_STUCK(13);
 
 #ifdef DEBUG
 #include "stdio.h"
@@ -209,7 +211,7 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 
 	//maybe_stuck = (telemetry.mc_dist < 10) || (min_front < 20);
 	//maybe_stuck = (min_front < 10);
-	maybe_stuck = (ssum > 2) || (telemetry.ir_front < 20);
+	maybe_stuck = (ssum > 2) || (telemetry.ir_front < FRONT_MIN_STUCK);
 
 	// steering calculations
 	turn = telemetry.mc_angle - 90;
@@ -263,7 +265,7 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 			// stuck countdown
 			if (maybe_stuck) {
 				if (!stuck_timer.running()) {
-					stuck_timer.start(telemetry.time, 500);
+					stuck_timer.start(telemetry.time, 1000);
 				}
 				else if (stuck_timer.triggered(telemetry.time)) {
 					stuck_timer.stop();
@@ -327,6 +329,8 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 	}
 
 	_clamp_steering_and_speed(telemetry);
+
+	telemetry.battery = state;
 
 	return drive_cmd;
 }

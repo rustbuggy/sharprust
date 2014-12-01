@@ -4,10 +4,10 @@
 #define STEERING_MIN 30
 #define STEERING_NEUTRAL 90
 #define STOP 95
-#define NORMAL_FORWARD 104
-#define MAX_FORWARD 120
+#define NORMAL_FORWARD 106
+#define MAX_FORWARD 112
 #define BREAKOUT_FORWARD 115
-#define MAX_ALLOWED_FORWARD 120
+#define MAX_ALLOWED_FORWARD 115
 #define NORMAL_BACKWARD 40
 #define MIN_ALLOWED_BACKWARD 40
 
@@ -278,7 +278,12 @@ drive_cmd_t& MCDriver::drive(bc_telemetry_packet_t& telemetry) {
 			break;
 
 		case STATE_BACKING:
-			drive_cmd.steering_pwm = 90 + steering;
+			if (turn.abs() < 10)
+			{
+				drive_cmd.steering_pwm = 90 + steering + 10;
+			} else {
+				drive_cmd.steering_pwm = 90 + steering;
+			}
 			drive_cmd.driving_pwm = NORMAL_BACKWARD;
 
 			if (!stuck_timer.running()) {

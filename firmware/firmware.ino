@@ -163,7 +163,7 @@ void loop() {
 
 			if (CB_MOTOR_COMMAND == header) {
 				cb_motor_command_packet_t* motor = (cb_motor_command_packet_t*) m_rx_buffer;
-				m_automatic = motor->automatic;
+				//m_automatic = motor->automatic;
 				if (m_automatic) {
 					driver.set_drive_pwm(motor->drive_pwm);
 				}

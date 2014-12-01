@@ -12,7 +12,7 @@ public:
 	fixed x, y;
 
 	point_t() :
-			x((int16_t)0), y((int16_t)0) {
+			x(0), y(0) {
 	}
 
 	point_t(const fixed& x, const fixed& y) :
@@ -21,19 +21,14 @@ public:
 
 	fixed get_distance() {
 		// TODO: get rid of double and sqrt
-		fixed dist(sqrt(double(x * x + y * y)));
-		return dist;
+		return fixed(sqrt(double(x * x + y * y)));
 	}
 
 	fixed get_deg_angle() {
 		// TODO: get rid of double and atan2
-		fixed rads(atan2(double(y), double(x)));
-		fixed angle(rads * VAL_RAD_TO_DEG);
-		return angle;
+		return fixed(atan2(double(y), double(x))) * VAL_RAD_TO_DEG;
 	}
 };
-
-#define ABS(x) (x >= 0 ? x : -x)
 
 #endif // __TYPES__H
 

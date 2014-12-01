@@ -1,7 +1,7 @@
 #ifndef __IRSHARP__H
 #define __IRSHARP__H
 
-#include "kalman.h"
+#include "types.h"
 
 class IRSharp {
 public:
@@ -10,7 +10,7 @@ public:
 
 private:
 	int16_t irPin;
-	SingleKalmanVar dist;
+	fixed dist;
 };
 
 #endif // __IRSHARP__H

@@ -13,7 +13,6 @@ SingleKalmanVar::SingleKalmanVar(const fixed& x, const fixed& P, const fixed& Q,
 }
 
 fixed& SingleKalmanVar::stepKalman(fixed measurement) {
-	/*
 	// predict
 	// predicted x is last x
 	P_temp = P + R;
@@ -22,8 +21,6 @@ fixed& SingleKalmanVar::stepKalman(fixed measurement) {
 	K = P_temp / (P_temp + Q);
 	x += K * (measurement - x);
 	P = (VAL_1 - K) * P_temp;
-	*/
-	x = measurement;
 
 	return x;
 }

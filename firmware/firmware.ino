@@ -14,12 +14,6 @@
 #define SERIALDEV Serial
 #endif
 
-#define START_BUTTON_DEBOUNCE_TIME_MS       250
-#define START_DELAY_MS                      5050
-
-#define BATTERY_CHECK_INTERVAL_MS           1000
-#define BATTERY_LOW_MILLI_VOLTAGE           7700
-
 #define TEENSY_LED          13 // (LED)
 #define START_BUTTON        14 // A0
 #define GREEN_LED           16 // A2
@@ -35,6 +29,16 @@
 
 #define STEERING_PWM_PIN    4
 #define DRIVE_PWM_PIN       3
+
+#define START_BUTTON_DEBOUNCE_TIME_MS       250
+#define START_DELAY_MS                      5050
+
+#define TELEMETRY_SEND_INTERVAL_MS			20
+
+#define BATTERY_CHECK_INTERVAL_MS           5000
+#define BATTERY_LOW_MILLI_VOLTAGE           7700
+
+#define AUTO_BLINK_INTERVAL_MS				125
 
 bc_telemetry_packet_t telemetry;
 
@@ -68,7 +72,8 @@ uint32_t m_last_battery_check_time = 0;
 MCDriver driver;
 
 void send_telemetry() {
-	m_tx_len = hdlc.encode((uint8_t*) &telemetry, sizeof(bc_telemetry_packet_t), m_tx_buffer);
+	m_tx_len = hdlc.encode((uint8_t*) &telemetry, sizeof(bc_telemetry_packet_t),
+			m_tx_buffer);
 	SERIALDEV.write(m_tx_buffer, m_tx_len);
 }
 
@@ -78,7 +83,7 @@ void setup() {
 	steeringservo.attach(STEERING_PWM_PIN);
 	drivingservo.attach(DRIVE_PWM_PIN);
 
-	analogReference (DEFAULT);
+	analogReference(DEFAULT);
 	analogReadAveraging(16);
 	analogReadResolution(10);
 
@@ -103,28 +108,29 @@ void button_service() {
 
 void toggle_led(uint8_t led) {
 	static bool ledon = true;
+
 	if (ledon) {
 		ledon = false;
 		digitalWrite(led, HIGH);
-	}
-	else {
+	} else {
 		ledon = true;
 		digitalWrite(led, LOW);
 	}
 }
 
-void blink_automatic_mode() {
-	static uint32_t last_blink;
-	if (millis() - last_blink > 125) {
+void blink_automatic_mode(uint32_t time) {
+	static uint32_t last_blink = time;
+
+	if (time - last_blink > AUTO_BLINK_INTERVAL_MS) {
 		toggle_led(TEENSY_LED);
-		last_blink = millis();
+		last_blink = time;
 	}
 }
 
 uint32_t battery_voltage() {
-	const uint32_t vref = 3600000; // 3.6 V
-	const uint32_t voltage_divider = 2710; // divides 2.7 times
-	return vref/1024 * analogRead(BATTERY) * (uint64_t)voltage_divider/1000000;
+	// 3.6 V divided 2.71 times
+	// ((3600000 / 1024) * analogRead(BATTERY) * 2710) / 1000000 
+	return (9756 * uint32_t(analogRead(BATTERY))) >> 10;
 }
 
 void loop() {
@@ -141,12 +147,13 @@ void loop() {
 	}
 
 	// handle button debounce
-	if (!m_button_active && (m_time > m_last_button_time +  START_BUTTON_DEBOUNCE_TIME_MS)) {
+	if (!m_button_active
+			&& (m_time > m_last_button_time + START_BUTTON_DEBOUNCE_TIME_MS)) {
 		m_button_active = true;
 	}
 
 	// ready to race!?
-	if (m_countdown && (m_time > m_countdown_start_time +  START_DELAY_MS)) {
+	if (m_countdown && (m_time > m_countdown_start_time + START_DELAY_MS)) {
 		m_button_active = true;
 		m_countdown = false;
 
@@ -162,12 +169,12 @@ void loop() {
 			uint8_t header = ((uint8_t*) m_rx_buffer)[0];
 
 			if (CB_MOTOR_COMMAND == header) {
-				cb_motor_command_packet_t* motor = (cb_motor_command_packet_t*) m_rx_buffer;
-				//m_automatic = motor->automatic;
+				cb_motor_command_packet_t* motor =
+						(cb_motor_command_packet_t*) m_rx_buffer;
+				m_automatic = motor->automatic;
 				if (m_automatic) {
 					driver.set_drive_pwm(motor->drive_pwm);
-				}
-				else {
+				} else {
 					steeringservo.write(motor->steering_pwm);
 					drivingservo.write(motor->drive_pwm);
 				}
@@ -186,22 +193,20 @@ void loop() {
 	if (m_automatic) {
 		steeringservo.write(drive_cmd.steering_pwm);
 		drivingservo.write(drive_cmd.driving_pwm);
-		blink_automatic_mode();
+		blink_automatic_mode(m_time);
 	}
 
-	if (m_time > m_last_telemetry_time + 20) {
-		send_telemetry();
+	if (m_time > m_last_telemetry_time + TELEMETRY_SEND_INTERVAL_MS) {
 		m_last_telemetry_time = m_time;
+		send_telemetry();
 	}
 
-	
 	if (m_time > m_last_battery_check_time + BATTERY_CHECK_INTERVAL_MS) {
 		m_last_battery_check_time = m_time;
-		//telemetry.battery = uint16_t(battery_voltage());
-		if (battery_voltage() < BATTERY_LOW_MILLI_VOLTAGE) {
+		telemetry.battery = uint16_t(battery_voltage());
+		if (telemetry.battery < BATTERY_LOW_MILLI_VOLTAGE) {
 			digitalWrite(RED_LED, HIGH);
-		}
-		else {
+		} else {
 			digitalWrite(RED_LED, LOW);
 		}
 	}

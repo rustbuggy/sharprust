@@ -9,6 +9,7 @@ lookup = zeros(1,1024);
 for i = 1:1024
     %if i > 112
         voltFromRaw = (i - 1) * (3299 / 1023) + 1;
+        %voltFromRaw = (i - 1) * (4999 / 1023) + 1;
         cm = 27.728 * ((voltFromRaw / 1000) ^ (-1.2045));
         %if ((cm < 6) || (cm > 80))
         %    lookup(1,i) = 100; % to integer
@@ -27,7 +28,7 @@ end
 fid = fopen('../firmware/lookups.cpp', 'w');
 fprintf(fid, '#include "lookups.h"\n\n');
 
-fprintf(fid, 'const uint8_t irLookup[1024] = {\n');
+fprintf(fid, 'const fixed irLookup[1024] = {\n');
 for y = 1:64
     for x = 1:16
         ind = (y - 1) * 16 + x;

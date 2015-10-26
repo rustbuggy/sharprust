@@ -7,12 +7,12 @@
 
 class SingleKalmanVar {
 private:
-	fixed Q, R, P, x;
-	fixed P_temp, K;
+  fixed Q, R, P, x;
+  fixed P_temp, K;
 
 public:
-	SingleKalmanVar(const fixed& x, const fixed& P, const fixed& Q, const fixed& R);
-	fixed& stepKalman(fixed measurement);
+  SingleKalmanVar(const fixed& x, const fixed& P, const fixed& Q, const fixed& R);
+  fixed& stepKalman(fixed measurement);
 };
 
 #endif // __KALMAN__H

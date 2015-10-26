@@ -11,34 +11,33 @@ const fx_ext_t fixed::FIXED_K = fx_ext_t(fx_t(1) << (FIXED_FBITS - 1));
 const double fixed::FIXED_ONE_D = double(FIXED_ONE);
 const double fixed::FIXED_ONE_D_RECP = 1.0 / FIXED_ONE_D;
 
-
 fixed operator+(const int a, const fixed& b) {
-	return fixed(fixed::fixed_from_int(a) + b.value, true);
+  return fixed(fixed::fixed_from_int(a) + b.value, true);
 }
 
 fixed operator+(const double a, const fixed& b) {
-	return fixed(fixed::fixed_from_double(a) + b.value, true);
+  return fixed(fixed::fixed_from_double(a) + b.value, true);
 }
 
 fixed operator-(const int a, const fixed& b) {
-	return fixed(fixed::fixed_from_int(a) - b.value, true);
+  return fixed(fixed::fixed_from_int(a) - b.value, true);
 }
 
 fixed operator-(const double a, const fixed& b) {
-	return fixed(fixed::fixed_from_double(a) - b.value, true);
+  return fixed(fixed::fixed_from_double(a) - b.value, true);
 }
 fixed operator*(const int a, const fixed& b) {
-	return fixed(fixed::fixed_multiply(fixed::fixed_from_int(a), b.value), true);
+  return fixed(fixed::fixed_multiply(fixed::fixed_from_int(a), b.value), true);
 }
 
 fixed operator*(const double a, const fixed& b) {
-	return fixed(fixed::fixed_multiply(fixed::fixed_from_double(a), b.value), true);
+  return fixed(fixed::fixed_multiply(fixed::fixed_from_double(a), b.value), true);
 }
 
 fixed operator/(const int a, const fixed& b) {
-	return fixed(fixed::fixed_divide(fixed::fixed_from_int(a), b.value), true);
+  return fixed(fixed::fixed_divide(fixed::fixed_from_int(a), b.value), true);
 }
 
 fixed operator/(const double a, const fixed& b) {
-	return fixed(fixed::fixed_divide(fixed::fixed_from_double(a), b.value), true);
+  return fixed(fixed::fixed_divide(fixed::fixed_from_double(a), b.value), true);
 }

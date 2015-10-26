@@ -5,12 +5,12 @@
 
 class IRSharp {
 public:
-	IRSharp(int16_t irPin);
-	fixed& distance();
+  IRSharp(int16_t irPin);
+  fixed& distance();
 
 private:
-	int16_t irPin;
-	fixed dist;
+  int16_t irPin;
+  fixed dist;
 };
 
 #endif // __IRSHARP__H

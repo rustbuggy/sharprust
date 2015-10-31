@@ -8,18 +8,18 @@
 #include "packets.h"
 #include "timer.h"
 
-#define STEERING_MIN          30
-#define STEERING_NEUTRAL      90
-#define STEERING_MAX          150
+#define STEERING_MIN                    30
+#define STEERING_NEUTRAL                90
+#define STEERING_MAX                    150
 
-#define STOP                  95
-#define NORMAL_FORWARD        106
-#define MAX_FORWARD           112
-#define BREAKOUT_FORWARD      115
-#define MAX_ALLOWED_FORWARD   115
+#define DRIVING_STOP                    95
+#define DRIVING_NORMAL_FORWARD          106
+#define DRIVING_MAX_FORWARD             112
+#define DRIVING_BREAKOUT_FORWARD        115
+#define DRIVING_MAX_ALLOWED_FORWARD     115
 
-#define NORMAL_BACKWARD       40
-#define MIN_ALLOWED_BACKWARD  40
+#define DRIVING_NORMAL_BACKWARD         40
+#define DRIVING_MIN_ALLOWED_BACKWARD    40
 
 #define BATTERY_CHECK_INTERVAL_MS       5000
 #define BATTERY_LOW_MILLI_VOLTAGE       7700
@@ -29,9 +29,9 @@
 
 #define AUTO_BLINK_INTERVAL_MS          125
 
-#define WINDOW_SIZE 8
-#define INFINITY_VARIANCE fixed(25)
-#define INFINITY fixed(100)
+#define WINDOW_SIZE         8
+#define INFINITY_VARIANCE   fixed(25)
+#define INFINITY_DISTANCE   fixed(100)
 
 class Buggy {
 private:

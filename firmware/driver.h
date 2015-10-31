@@ -12,7 +12,6 @@ typedef enum driver_states_t {
 // Drive towards mass center of estimated IR reflection points
 class Driver {
 private:
-  drive_cmd_t drive_cmd;
   driver_states_t state;
 
   bool maybe_stuck;
@@ -37,6 +36,8 @@ private:
   void clamp_steering_and_speed();
 
 public:
+  drive_cmd_t drive_cmd;
+
   Driver();
   virtual ~Driver();
 

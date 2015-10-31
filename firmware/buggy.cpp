@@ -24,18 +24,18 @@ void Buggy::clamp_steering_and_speed(drive_cmd_t& cmd) {
   }
 
   // speed
-  if (cmd.driving_pwm > MAX_ALLOWED_FORWARD) {
-    cmd.driving_pwm = MAX_ALLOWED_FORWARD;
+  if (cmd.driving_pwm > DRIVING_MAX_ALLOWED_FORWARD) {
+    cmd.driving_pwm = DRIVING_MAX_ALLOWED_FORWARD;
   }
-  else if (cmd.driving_pwm < MIN_ALLOWED_BACKWARD) {
-    cmd.driving_pwm = MIN_ALLOWED_BACKWARD;
+  else if (cmd.driving_pwm < DRIVING_MIN_ALLOWED_BACKWARD) {
+    cmd.driving_pwm = DRIVING_MIN_ALLOWED_BACKWARD;
   }
 }
 
 Buggy::Buggy() :
     read_ind(WINDOW_SIZE - 1),
     /*sharp_left(IR_LEFT), sharp_right(IR_RIGHT), sharp_front_left(IR_FRONT_LEFT), sharp_front_right(IR_FRONT_RIGHT), sharp_front(IR_FRONT), */
-    steering_pwm(STEERING_NEUTRAL), driving_pwm(STOP), led_state(true) {
+    steering_pwm(STEERING_NEUTRAL), driving_pwm(DRIVING_STOP), led_state(true) {
 }
 
 Buggy::~Buggy() {
@@ -72,6 +72,9 @@ void Buggy::setup() {
 
   steeringservo.attach(STEERING_PWM_PIN);
   drivingservo.attach(DRIVE_PWM_PIN);
+
+  steeringservo.write(STEERING_NEUTRAL);
+  drivingservo.write(DRIVING_STOP);
 }
 
 uint16_t Buggy::battery_voltage() {
@@ -137,11 +140,11 @@ void Buggy::sense(bc_telemetry_packet_t& telemetry) {
       variance[k] = sum / n;
     }
 
-    telemetry.ir_left = variance[0] < INFINITY_VARIANCE ? average[0] : INFINITY;
-    telemetry.ir_front_left = variance[1] < INFINITY_VARIANCE ? average[1] : INFINITY;
-    telemetry.ir_front = variance[2] < INFINITY_VARIANCE ? average[2] : INFINITY;
-    telemetry.ir_front_right = variance[3] < INFINITY_VARIANCE ? average[3] : INFINITY;
-    telemetry.ir_right = variance[4] < INFINITY_VARIANCE ? average[4] : INFINITY;
+    telemetry.ir_left = variance[0] < INFINITY_VARIANCE ? average[0] : INFINITY_DISTANCE;
+    telemetry.ir_front_left = variance[1] < INFINITY_VARIANCE ? average[1] : INFINITY_DISTANCE;
+    telemetry.ir_front = variance[2] < INFINITY_VARIANCE ? average[2] : INFINITY_DISTANCE;
+    telemetry.ir_front_right = variance[3] < INFINITY_VARIANCE ? average[3] : INFINITY_DISTANCE;
+    telemetry.ir_right = variance[4] < INFINITY_VARIANCE ? average[4] : INFINITY_DISTANCE;
   }
 
   //telemetry.ir_left = irLookup[adc->analogRead(IR_LEFT)];
@@ -159,12 +162,12 @@ void Buggy::sense(bc_telemetry_packet_t& telemetry) {
 void Buggy::act(bc_telemetry_packet_t& telemetry) {
   if (steering_pwm != telemetry.steering_pwm) {
     steering_pwm = telemetry.steering_pwm;
-    steeringservo.write(steering_pwm);
   }
   if (driving_pwm != telemetry.driving_pwm) {
     driving_pwm = telemetry.driving_pwm;
-    drivingservo.write(driving_pwm);
   }
+  steeringservo.write(steering_pwm);
+  drivingservo.write(driving_pwm);
 
   if (telemetry.automatic) {
     auto_mode_blink(telemetry.time);

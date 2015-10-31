@@ -17,8 +17,6 @@
 
 class Communicator {
 private:
-  drive_cmd_t drive_cmd;
-
   uint8_t rx_buffer[255];
   uint8_t rx_len;
   uint8_t tx_buffer[255];
@@ -28,6 +26,8 @@ private:
   timer send_telemetry_timer;
 
 public:
+  drive_cmd_t drive_cmd;
+
   Communicator();
   virtual ~Communicator();
 

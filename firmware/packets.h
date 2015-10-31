@@ -10,6 +10,7 @@ enum {
 };
 
 typedef struct __attribute__((packed)) bc_telemetry_packet_t {
+public:
   uint8_t header; // BC_TELEMETRY
   uint32_t time;
   fixed ir_left;
@@ -47,6 +48,7 @@ typedef struct __attribute__((packed)) bc_telemetry_packet_t {
 } bc_telemetry_packet_t;
 
 typedef struct __attribute__((packed)) cb_motor_command_packet_t {
+public:
   uint8_t header; // CB_MOTOR_COMMAND
   uint8_t automatic;
   uint8_t steering_pwm;
@@ -61,6 +63,7 @@ typedef struct __attribute__((packed)) cb_motor_command_packet_t {
 } cb_motor_command_packet_t;
 
 typedef struct drive_cmd_t {
+public:
   bool received;
   uint8_t automatic;
   uint8_t steering_pwm;

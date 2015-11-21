@@ -22,6 +22,10 @@ public:
   fixed mc_dist;
   fixed mc_angle;
 
+  float accel_x;
+  float accel_y;
+  float accel_z;
+
   uint8_t automatic;
   uint8_t steering_pwm;
   uint8_t driving_pwm;
@@ -38,6 +42,10 @@ public:
     ir_front = 0;
     mc_dist = 0;
     mc_angle = 0;
+
+    accel_x = 0.0f;
+    accel_y = 0.0f;
+    accel_z = 0.0f;
 
     automatic = 0; // false
     steering_pwm = 90; // STEERING_NEUTRAL

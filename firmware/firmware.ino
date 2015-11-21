@@ -1,4 +1,6 @@
 #include <Servo.h>
+#include <SPI.h>
+#include <EEPROM.h>
 
 #include <ADC.h>
 

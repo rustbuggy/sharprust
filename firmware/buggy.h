@@ -7,6 +7,7 @@
 #include "irsharp.h"
 #include "packets.h"
 #include "timer.h"
+#include "accel.h"
 
 #define STEERING_MIN                    30
 #define STEERING_NEUTRAL                90
@@ -29,8 +30,8 @@
 
 #define AUTO_BLINK_INTERVAL_MS          125
 
-#define WINDOW_SIZE         8
-#define INFINITY_VARIANCE   fixed(25)
+#define WINDOW_SIZE         4
+#define INFINITY_VARIANCE   fixed(49)
 #define INFINITY_DISTANCE   fixed(100)
 
 class Buggy {
@@ -44,6 +45,8 @@ private:
   IRSharp sharp_front_right;
   IRSharp sharp_front;
   */
+
+  Accel accel;
 
   uint8_t read_ind;
   fixed reads[5][WINDOW_SIZE];

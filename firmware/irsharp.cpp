@@ -10,7 +10,7 @@ IRSharp::IRSharp(int16_t irPin) :
 
 // GP2Y0A21Y
 fixed& IRSharp::distance() {
-  dist = irLookup[analogRead(irPin)];
+  dist = irLookupFL[analogRead(irPin)];
   return dist;
 }
 

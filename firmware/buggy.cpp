@@ -33,9 +33,9 @@ void Buggy::clamp_steering_and_speed(drive_cmd_t& cmd) {
 }
 
 Buggy::Buggy() :
-    read_ind(WINDOW_SIZE - 1),
-    /*sharp_left(IR_LEFT), sharp_right(IR_RIGHT), sharp_front_left(IR_FRONT_LEFT), sharp_front_right(IR_FRONT_RIGHT), sharp_front(IR_FRONT), */
-    steering_pwm(STEERING_NEUTRAL), driving_pwm(DRIVING_STOP), led_state(true) {
+  read_ind(WINDOW_SIZE - 1),
+  /*sharp_left(IR_LEFT), sharp_right(IR_RIGHT), sharp_front_left(IR_FRONT_LEFT), sharp_front_right(IR_FRONT_RIGHT), sharp_front(IR_FRONT), */
+  steering_pwm(STEERING_NEUTRAL), driving_pwm(DRIVING_STOP), led_state(true) {
 }
 
 Buggy::~Buggy() {
@@ -43,6 +43,8 @@ Buggy::~Buggy() {
 }
 
 void Buggy::setup() {
+  accel.setup();
+
   pinMode(IR_LEFT, INPUT);
   pinMode(IR_FRONT_LEFT, INPUT);
   pinMode(IR_FRONT, INPUT);
@@ -58,13 +60,7 @@ void Buggy::setup() {
   adc->setResolution(10);
   adc->setAveraging(0);
 
-  /*
-   analogReference (DEFAULT);
-   analogReadAveraging(16);
-   analogReadResolution(10);
-   */
-
-  pinMode(TEENSY_LED, OUTPUT);
+  //pinMode(TEENSY_LED, OUTPUT);
   pinMode(RED_LED, OUTPUT);
 
   pinMode(START_BUTTON, INPUT_PULLUP);
@@ -86,7 +82,7 @@ uint16_t Buggy::battery_voltage() {
 
 void Buggy::auto_mode_blink(uint32_t time) {
   if (blink_timer.start_or_triggered(time, AUTO_BLINK_INTERVAL_MS, false, true)) {
-    digitalWrite(TEENSY_LED, led_state ? HIGH : LOW);
+    //digitalWrite(TEENSY_LED, led_state ? HIGH : LOW);
     led_state = !led_state;
   }
 }
@@ -99,7 +95,7 @@ void Buggy::sense(bc_telemetry_packet_t& telemetry) {
       button_pressed = false;
 
       countdown_timer.start(telemetry.time, START_DELAY_MS, true);
-      digitalWrite(TEENSY_LED, HIGH); // inform the user that countdown started
+      //digitalWrite(TEENSY_LED, HIGH); // inform the user that countdown started
     }
 
     // ready to race!?
@@ -108,19 +104,25 @@ void Buggy::sense(bc_telemetry_packet_t& telemetry) {
     }
   }
 
+  RTVector3& a = accel.getRealAccel(telemetry.time);
+  telemetry.accel_x = a.x();
+  telemetry.accel_y = a.y();
+  telemetry.accel_z = a.z();
+
   //telemetry.ir_left = sharp_left.distance();
   //telemetry.ir_right = sharp_right.distance();
   //telemetry.ir_front_left = sharp_front_left.distance();
   //telemetry.ir_front_right = sharp_front_right.distance();
   //telemetry.ir_front = sharp_front.distance();
 
-  if (ir_check_timer.start_or_triggered(telemetry.time, 1, false, true))
+  if (ir_check_timer.start_or_triggered(telemetry.time, 20, false, true))
   {
+    /*
     read_ind = (read_ind + 1) % WINDOW_SIZE;
     reads[0][read_ind] = irLookup[adc->analogRead(IR_LEFT)];
     reads[1][read_ind] = irLookup[adc->analogRead(IR_FRONT_LEFT)];
     reads[2][read_ind] = irLookup[adc->analogRead(IR_FRONT)];
-    reads[3][read_ind] = irLookup[adc->analogRead(IR_FRONT_LEFT)];
+    reads[3][read_ind] = irLookup[adc->analogRead(IR_FRONT_RIGHT)];
     reads[4][read_ind] = irLookup[adc->analogRead(IR_RIGHT)];
 
     uint8_t k, i;
@@ -142,16 +144,17 @@ void Buggy::sense(bc_telemetry_packet_t& telemetry) {
 
     telemetry.ir_left = variance[0] < INFINITY_VARIANCE ? average[0] : INFINITY_DISTANCE;
     telemetry.ir_front_left = variance[1] < INFINITY_VARIANCE ? average[1] : INFINITY_DISTANCE;
-    telemetry.ir_front = variance[2] < INFINITY_VARIANCE ? average[2] : INFINITY_DISTANCE;
+    telemetry.ir_front = 150;//variance[2] < INFINITY_VARIANCE ? average[2] : INFINITY_DISTANCE;
     telemetry.ir_front_right = variance[3] < INFINITY_VARIANCE ? average[3] : INFINITY_DISTANCE;
     telemetry.ir_right = variance[4] < INFINITY_VARIANCE ? average[4] : INFINITY_DISTANCE;
-  }
+    */
 
-  //telemetry.ir_left = irLookup[adc->analogRead(IR_LEFT)];
-  //telemetry.ir_front_left = irLookup[adc->analogRead(IR_FRONT_LEFT)];
-  //telemetry.ir_front = irLookup[adc->analogRead(IR_FRONT)];
-  //telemetry.ir_front_right = irLookup[adc->analogRead(IR_FRONT_LEFT)];
-  //telemetry.ir_right = irLookup[adc->analogRead(IR_RIGHT)];
+    telemetry.ir_left = irLookupL[adc->analogRead(IR_LEFT)];
+    telemetry.ir_front_left = irLookupFL[adc->analogRead(IR_FRONT_LEFT)];
+    telemetry.ir_front = 150;//irLookup[adc->analogRead(IR_FRONT)];
+    telemetry.ir_front_right = irLookupFR[adc->analogRead(IR_FRONT_RIGHT)];
+    telemetry.ir_right = irLookupR[adc->analogRead(IR_RIGHT)];
+  }
 
   if (battery_check_timer.start_or_triggered(telemetry.time, BATTERY_CHECK_INTERVAL_MS, false, true)) {
     telemetry.battery = battery_voltage();

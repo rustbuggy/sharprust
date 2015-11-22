@@ -71,6 +71,20 @@ linear = [
     225 100
     220 110
     d = 520986 * x^(-1.59)
+    
+    % front
+    955 10
+    525 20
+    375 30
+    300 40
+    255 50
+    225 60
+    200 70
+    185 80
+    175 90
+    165 100
+    150 110
+    d = 76106 * x^(-1.31)
 %}
 
 % Sharp IR sensor 10..80 cm
@@ -107,7 +121,8 @@ for i = 1:1024
         %cm = fix(372251 * sensorValue^(-1.55)); % front left
         %cm = fix(191405 * sensorValue^(-1.46)); % front right
         %cm = fix(202252 * sensorValue^(-1.46)); % left
-        cm = fix(520986 * sensorValue^(-1.59)); % right
+        %cm = fix(520986 * sensorValue^(-1.59)); % right
+        cm = fix(76106 * sensorValue^(-1.31)); % front
         if cm > 100
             cm = 100;
         elseif cm < 10

@@ -144,14 +144,14 @@ void Buggy::sense(bc_telemetry_packet_t& telemetry) {
 
     telemetry.ir_left = variance[0] < INFINITY_VARIANCE ? average[0] : INFINITY_DISTANCE;
     telemetry.ir_front_left = variance[1] < INFINITY_VARIANCE ? average[1] : INFINITY_DISTANCE;
-    telemetry.ir_front = 150;//variance[2] < INFINITY_VARIANCE ? average[2] : INFINITY_DISTANCE;
+    telemetry.ir_front = variance[2] < INFINITY_VARIANCE ? average[2] : INFINITY_DISTANCE;
     telemetry.ir_front_right = variance[3] < INFINITY_VARIANCE ? average[3] : INFINITY_DISTANCE;
     telemetry.ir_right = variance[4] < INFINITY_VARIANCE ? average[4] : INFINITY_DISTANCE;
     */
 
     telemetry.ir_left = irLookupL[adc->analogRead(IR_LEFT)];
     telemetry.ir_front_left = irLookupFL[adc->analogRead(IR_FRONT_LEFT)];
-    telemetry.ir_front = 150;//irLookup[adc->analogRead(IR_FRONT)];
+    telemetry.ir_front = irLookupF[adc->analogRead(IR_FRONT)];
     telemetry.ir_front_right = irLookupFR[adc->analogRead(IR_FRONT_RIGHT)];
     telemetry.ir_right = irLookupR[adc->analogRead(IR_RIGHT)];
   }

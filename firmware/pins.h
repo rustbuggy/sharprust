@@ -4,10 +4,9 @@
 #include <Arduino.h>
 
 //#define TEENSY_LED          13 // (LED)
-#define START_BUTTON        18 // A4
+#define START_BUTTON        14 // A0
 #define RED_LED             15 // A1
 
-//#define SPI_SCLK            14 // A0, SCK
 #define SPI_SCLK            13 // (LED)
 #define SPI_MOSI            11 // DOUT
 #define SPI_MISO            12 // DIN

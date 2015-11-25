@@ -3,6 +3,19 @@
 
 #include "types.h"
 
+#define STEERING_MIN                    30
+#define STEERING_NEUTRAL                80
+#define STEERING_MAX                    130
+
+#define DRIVING_STOP                    90
+#define DRIVING_NORMAL_FORWARD          110
+#define DRIVING_MAX_FORWARD             112
+#define DRIVING_BREAKOUT_FORWARD        115
+#define DRIVING_MAX_ALLOWED_FORWARD     115
+
+#define DRIVING_NORMAL_BACKWARD         40
+#define DRIVING_MIN_ALLOWED_BACKWARD    40
+
 // bc means from Buggy to Computer
 // cb means from Computer to Buggy
 enum {
@@ -48,8 +61,8 @@ public:
     accel_z = 0.0f;
 
     automatic = 0; // false
-    steering_pwm = 90; // STEERING_NEUTRAL
-    driving_pwm = 95; // STOP
+    steering_pwm = STEERING_NEUTRAL;
+    driving_pwm = DRIVING_STOP;
 
     battery = 0;
   }
@@ -65,12 +78,12 @@ public:
   cb_motor_command_packet_t() {
     header = CB_MOTOR_COMMAND;
     automatic = 0; // false
-    steering_pwm = 90; // STEERING_NEUTRAL
-    driving_pwm = 95; // STOP
+    steering_pwm = STEERING_NEUTRAL;
+    driving_pwm = DRIVING_STOP;
   }
 } cb_motor_command_packet_t;
 
-typedef struct drive_cmd_t {
+typedef struct __attribute__((packed)) drive_cmd_t {
 public:
   bool received;
   uint8_t automatic;
@@ -80,8 +93,8 @@ public:
   drive_cmd_t() {
     received = false;
     automatic = 0; // false
-    steering_pwm = 90; // STEERING_NEUTRAL
-    driving_pwm = 95; // STOP
+    steering_pwm = STEERING_NEUTRAL;
+    driving_pwm = DRIVING_STOP;
   }
 } drive_cmd_t;
 

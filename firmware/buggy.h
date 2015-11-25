@@ -9,19 +9,6 @@
 #include "timer.h"
 #include "accel.h"
 
-#define STEERING_MIN                    30
-#define STEERING_NEUTRAL                90
-#define STEERING_MAX                    150
-
-#define DRIVING_STOP                    95
-#define DRIVING_NORMAL_FORWARD          106
-#define DRIVING_MAX_FORWARD             112
-#define DRIVING_BREAKOUT_FORWARD        115
-#define DRIVING_MAX_ALLOWED_FORWARD     115
-
-#define DRIVING_NORMAL_BACKWARD         40
-#define DRIVING_MIN_ALLOWED_BACKWARD    40
-
 #define BATTERY_CHECK_INTERVAL_MS       5000
 #define BATTERY_LOW_MILLI_VOLTAGE       7700
 
@@ -36,6 +23,8 @@
 
 class Buggy {
 private:
+  uint32_t setup_time;
+
   ADC* adc;
 
   /*

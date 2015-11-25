@@ -14,22 +14,32 @@ Buggy buggy; // Models the actual buggy, sensors and actuators
 Communicator comm; // Manual control and telemetry output
 Driver driver; // The "intelligence"
 
+uint8_t was_automatic;
+
 void setup() {
+  delay(1000);
+
   comm.setup();
   buggy.setup();
   driver.setup();
 }
 
 void loop() {
+  was_automatic = telemetry.automatic;
+
   buggy.sense(telemetry);
 
   drive_cmd_t& manual_cmd = comm.read_command(telemetry);
 
   if (manual_cmd.received) {
-    if (!telemetry.automatic && manual_cmd.automatic) {
-      driver.reset(); // on change to automatic start from scratch
-    }
     telemetry.automatic = manual_cmd.automatic;
+  }
+
+  if (!was_automatic && telemetry.automatic) {
+    driver.reset(); // on change to automatic start from scratch
+  }
+
+  if (manual_cmd.received) {
     if (telemetry.automatic) {
       driver.set_max_forward_pwm(manual_cmd.driving_pwm);
     }

@@ -55,6 +55,9 @@ void Driver::reset() {
 
   tl = tfl = tf = tfr = tr = 0;
   sl = sfl = sf = sfr = sr = ssum = 0;
+
+  pid.reset();
+  driving_pwm = DRIVING_STOP;
 }
 
 void Driver::set_max_forward_pwm(uint8_t pwm) {
@@ -143,8 +146,11 @@ drive_cmd_t& Driver::drive(bc_telemetry_packet_t& telemetry) {
 
   switch (state) {
     case STATE_NORMAL:
-      drive_cmd.steering_pwm = 90 - steering;
-      drive_cmd.driving_pwm = DRIVING_NORMAL_FORWARD + int(speed_add);
+      drive_cmd.steering_pwm = STEERING_NEUTRAL;// - steering;
+      //drive_cmd.driving_pwm = DRIVING_NORMAL_FORWARD + int(speed_add);
+      driving_pwm += pid.update(0.5 - telemetry.accel_x, telemetry.accel_x);
+      drive_cmd.driving_pwm = driving_pwm;
+
       /*
        if (breakout_timer.running()) {
        drive_cmd.driving_pwm = BREAKOUT_FORWARD;
@@ -157,6 +163,7 @@ drive_cmd_t& Driver::drive(bc_telemetry_packet_t& telemetry) {
        }
        */
 
+      /*
       // for abrupt lowering of speed go to braking state
       if (last_speed_add - speed_add > BRAKING_THRES) {
         stuck_timer.stop();
@@ -176,6 +183,7 @@ drive_cmd_t& Driver::drive(bc_telemetry_packet_t& telemetry) {
       else {
         stuck_timer.stop();
       }
+      */
       break;
 
     case STATE_BACKING:

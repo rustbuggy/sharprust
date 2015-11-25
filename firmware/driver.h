@@ -4,6 +4,7 @@
 #include "types.h"
 #include "packets.h"
 #include "timer.h"
+#include "pid.h"
 
 typedef enum driver_states_t {
   STATE_IDLE = 1, STATE_NORMAL, STATE_BACKING, /*STATE_BREAKOUT,*/STATE_BRAKING
@@ -31,6 +32,9 @@ private:
   fixed tl, tfl, tf, tfr, tr;
   uint32_t sl, sfl, sf, sfr, sr, ssum;
   fixed lm, flm, fm, frm, rm, inv_msum;
+
+  PID pid;
+  float driving_pwm;
 
   void calc_direction(bc_telemetry_packet_t& telemetry);
   void clamp_steering_and_speed();

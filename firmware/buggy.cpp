@@ -14,6 +14,16 @@ void button_service() {
   }
 }
 
+Buggy::Buggy() : setup_time(0),
+  read_ind(WINDOW_SIZE - 1),
+  /*sharp_left(IR_LEFT), sharp_right(IR_RIGHT), sharp_front_left(IR_FRONT_LEFT), sharp_front_right(IR_FRONT_RIGHT), sharp_front(IR_FRONT), */
+  steering_pwm(STEERING_NEUTRAL), driving_pwm(DRIVING_STOP), led_state(true) {
+}
+
+Buggy::~Buggy() {
+  delete adc;
+}
+
 void Buggy::clamp_steering_and_speed(drive_cmd_t& cmd) {
   // steering
   if (cmd.steering_pwm > STEERING_MAX) {
@@ -32,17 +42,9 @@ void Buggy::clamp_steering_and_speed(drive_cmd_t& cmd) {
   }
 }
 
-Buggy::Buggy() :
-  read_ind(WINDOW_SIZE - 1),
-  /*sharp_left(IR_LEFT), sharp_right(IR_RIGHT), sharp_front_left(IR_FRONT_LEFT), sharp_front_right(IR_FRONT_RIGHT), sharp_front(IR_FRONT), */
-  steering_pwm(STEERING_NEUTRAL), driving_pwm(DRIVING_STOP), led_state(true) {
-}
-
-Buggy::~Buggy() {
-  delete adc;
-}
-
 void Buggy::setup() {
+  setup_time = millis();
+
   accel.setup();
 
   pinMode(IR_LEFT, INPUT);
@@ -68,9 +70,6 @@ void Buggy::setup() {
 
   steeringservo.attach(STEERING_PWM_PIN);
   drivingservo.attach(DRIVE_PWM_PIN);
-
-  steeringservo.write(STEERING_NEUTRAL);
-  drivingservo.write(DRIVING_STOP);
 }
 
 uint16_t Buggy::battery_voltage() {
@@ -163,14 +162,17 @@ void Buggy::sense(bc_telemetry_packet_t& telemetry) {
 }
 
 void Buggy::act(bc_telemetry_packet_t& telemetry) {
-  if (steering_pwm != telemetry.steering_pwm) {
-    steering_pwm = telemetry.steering_pwm;
+  if (telemetry.time - setup_time > 5000)
+  {
+    if (steering_pwm != telemetry.steering_pwm) {
+      steering_pwm = telemetry.steering_pwm;
+    }
+    if (driving_pwm != telemetry.driving_pwm) {
+      driving_pwm = telemetry.driving_pwm;
+    }
+    steeringservo.write(steering_pwm);
+    drivingservo.write(driving_pwm);
   }
-  if (driving_pwm != telemetry.driving_pwm) {
-    driving_pwm = telemetry.driving_pwm;
-  }
-  steeringservo.write(steering_pwm);
-  drivingservo.write(driving_pwm);
 
   if (telemetry.automatic) {
     auto_mode_blink(telemetry.time);

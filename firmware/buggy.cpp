@@ -57,8 +57,8 @@ void Buggy::setup() {
 
   adc = new ADC(); // adc object
 
-  adc->setSamplingSpeed(ADC_VERY_LOW_SPEED); // change the sampling speed
-  adc->setConversionSpeed(ADC_VERY_LOW_SPEED); // change the conversion speed
+  adc->setSamplingSpeed(ADC_MED_SPEED); // change the sampling speed
+  adc->setConversionSpeed(ADC_MED_SPEED); // change the conversion speed
   adc->setResolution(10);
   adc->setAveraging(0);
 
@@ -87,7 +87,10 @@ void Buggy::auto_mode_blink(uint32_t time) {
 }
 
 void Buggy::sense(bc_telemetry_packet_t& telemetry) {
+  uint32_t last_time = telemetry.time;
   telemetry.time = millis();
+  ++telemetry.cycles;
+  float time_diff = (telemetry.time - last_time) / 1000.0;
 
   if (!telemetry.automatic) {
     if (button_pressed) {
@@ -107,6 +110,9 @@ void Buggy::sense(bc_telemetry_packet_t& telemetry) {
   telemetry.accel_x = a.x();
   telemetry.accel_y = a.y();
   telemetry.accel_z = a.z();
+  telemetry.speed_x += (a.x() * 9.8322) * time_diff;
+  telemetry.speed_y += (a.y() * 9.8322) * time_diff;
+  telemetry.speed_z += (a.z() * 9.8322) * time_diff;
 
   //telemetry.ir_left = sharp_left.distance();
   //telemetry.ir_right = sharp_right.distance();
@@ -114,15 +120,15 @@ void Buggy::sense(bc_telemetry_packet_t& telemetry) {
   //telemetry.ir_front_right = sharp_front_right.distance();
   //telemetry.ir_front = sharp_front.distance();
 
-  if (ir_check_timer.start_or_triggered(telemetry.time, 20, false, true))
+  //if (ir_check_timer.start_or_triggered(telemetry.time, 20, false, true))
   {
     /*
     read_ind = (read_ind + 1) % WINDOW_SIZE;
-    reads[0][read_ind] = irLookup[adc->analogRead(IR_LEFT)];
-    reads[1][read_ind] = irLookup[adc->analogRead(IR_FRONT_LEFT)];
-    reads[2][read_ind] = irLookup[adc->analogRead(IR_FRONT)];
-    reads[3][read_ind] = irLookup[adc->analogRead(IR_FRONT_RIGHT)];
-    reads[4][read_ind] = irLookup[adc->analogRead(IR_RIGHT)];
+    reads[0][read_ind] = irLookupL[adc->analogRead(IR_LEFT)];
+    reads[1][read_ind] = irLookupFL[adc->analogRead(IR_FRONT_LEFT)];
+    reads[2][read_ind] = irLookupF[adc->analogRead(IR_FRONT)];
+    reads[3][read_ind] = irLookupFR[adc->analogRead(IR_FRONT_RIGHT)];
+    reads[4][read_ind] = irLookupR[adc->analogRead(IR_RIGHT)];
 
     uint8_t k, i;
     fixed sum, diff;
@@ -166,15 +172,16 @@ void Buggy::act(bc_telemetry_packet_t& telemetry) {
   {
     if (steering_pwm != telemetry.steering_pwm) {
       steering_pwm = telemetry.steering_pwm;
+      steeringservo.write(steering_pwm);
     }
     if (driving_pwm != telemetry.driving_pwm) {
       driving_pwm = telemetry.driving_pwm;
+      drivingservo.write(driving_pwm);
     }
-    steeringservo.write(steering_pwm);
-    drivingservo.write(driving_pwm);
   }
 
   if (telemetry.automatic) {
     auto_mode_blink(telemetry.time);
   }
 }
+

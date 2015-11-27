@@ -37,11 +37,14 @@ void loop() {
 
   if (!was_automatic && telemetry.automatic) {
     driver.reset(); // on change to automatic start from scratch
+    telemetry.speed_x = 0.0f;
+    telemetry.speed_y = 0.0f;
+    telemetry.speed_z = 0.0f;
   }
 
   if (manual_cmd.received) {
     if (telemetry.automatic) {
-      driver.set_max_forward_pwm(manual_cmd.driving_pwm);
+      //driver.set_max_forward_pwm(manual_cmd.driving_pwm);
     }
     else {
       telemetry.steering_pwm = manual_cmd.steering_pwm;

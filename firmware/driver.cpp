@@ -5,7 +5,7 @@
 #define STUCK_THRES 5
 #define STUCK_COUNT 1000
 
-#define BRAKING_THRES 4
+#define BRAKING_THRES (DRIVING_MAX_FORWARD - DRIVING_NORMAL_FORWARD) / 3
 
 static const fixed VAL_SQRT_1_DIV_2(0.70710678118654752440084436210485);
 static const fixed VAL_SQRT_3_DIV_2(0.86602540378443864676372317075294);
@@ -56,6 +56,7 @@ void Driver::reset() {
   tl = tfl = tf = tfr = tr = 0;
   sl = sfl = sf = sfr = sr = ssum = 0;
 
+  accel_setpoint = 0.1f;
   pid.reset();
   driving_pwm = DRIVING_STOP;
 }
@@ -64,7 +65,7 @@ void Driver::set_max_forward_pwm(uint8_t pwm) {
   max_forward_pwm = pwm;
 }
 
-void Driver::calc_direction(bc_telemetry_packet_t& telemetry) {
+bool Driver::estimate_if_stuck(bc_telemetry_packet_t& telemetry) {
   // exponential moving average of sensors
   tl = (127 * tl + telemetry.ir_left) * VAL_1_DIV_128;
   tfl = (127 * tfl + telemetry.ir_front_left) * VAL_1_DIV_128;
@@ -80,9 +81,12 @@ void Driver::calc_direction(bc_telemetry_packet_t& telemetry) {
   sr = telemetry.ir_right < 90 && (tr - telemetry.ir_right).absolute() < STUCK_THRES ? sr + 1 : 0;
 
   // how many sensors have been near the same value for at least x times
-  ssum = (sl > STUCK_COUNT ? 1 : 0) + (sfl > STUCK_COUNT ? 1 : 0) + (sf > STUCK_COUNT ? 1 : 0) + (sfr > STUCK_COUNT ? 1 : 0)
-      + (sr > STUCK_COUNT ? 1 : 0);
+  ssum = (sl > STUCK_COUNT ? 1 : 0) + (sfl > STUCK_COUNT ? 1 : 0) + (sf > STUCK_COUNT ? 1 : 0) + (sfr > STUCK_COUNT ? 1 : 0) + (sr > STUCK_COUNT ? 1 : 0);
 
+  return (ssum > 2);
+}
+
+void Driver::calc_direction(bc_telemetry_packet_t& telemetry) {
   // left and right 45 degrees from center (y-axis)
   // front_left and front_right 30 degrees from center (y-axis)
   // coordinates zero between front wheels
@@ -99,23 +103,28 @@ void Driver::calc_direction(bc_telemetry_packet_t& telemetry) {
   r.y = a2 - SIDE_Y_OFFSET;
 
   // calculate weights
-  inv_msum = 1 / (telemetry.ir_left + telemetry.ir_front_left + telemetry.ir_front + telemetry.ir_front_right + telemetry.ir_right);
-  //inv_msum = 1 / (telemetry.ir_left + telemetry.ir_front_left + 100 + telemetry.ir_front_right + telemetry.ir_right);
-  lm = telemetry.ir_left * inv_msum;
+  if (right_default)
+  {
+    if (telemetry.ir_left + telemetry.ir_front_left > telemetry.ir_right + telemetry.ir_front_right + 10)
+      right_default = false;
+  }
+  else
+  {
+    if (telemetry.ir_right + telemetry.ir_front_right > telemetry.ir_left + telemetry.ir_front_left + 10)
+      right_default = true;
+  }
+  inv_msum = 1 / (telemetry.ir_left + telemetry.ir_front_left + 100 + telemetry.ir_front_right + telemetry.ir_right);
   flm = telemetry.ir_front_left * inv_msum;
   fm = telemetry.ir_front * inv_msum;
   frm = telemetry.ir_front_right * inv_msum;
-  rm = telemetry.ir_right * inv_msum;
-  /*
-  if (telemetry.ir_left + telemetry.ir_front_left > telemetry.ir_right + telemetry.ir_front_right + 30) {
-    lm = (telemetry.ir_left + (100 - telemetry.ir_front)) * inv_msum;
-    rm = telemetry.ir_right * inv_msum;
-  }
-  else {
+  if (right_default) {
     lm = telemetry.ir_left * inv_msum;
     rm = (telemetry.ir_right + (100 - telemetry.ir_front)) * inv_msum;
   }
-  */
+  else {
+    lm = (telemetry.ir_left + (100 - telemetry.ir_front)) * inv_msum;
+    rm = telemetry.ir_right * inv_msum;
+  }
 
   // fill missing telemetry values
   telemetry.mc.x = (lm * l.x) + (flm * fl.x) + (frm * fr.x) + (rm * r.x);
@@ -127,11 +136,10 @@ void Driver::calc_direction(bc_telemetry_packet_t& telemetry) {
 drive_cmd_t& Driver::drive(bc_telemetry_packet_t& telemetry) {
   fixed turn, speed_add, front_fact, angle_fact, steering_fact;
 
-  calc_direction(telemetry);
-
-  maybe_stuck = (ssum > 2);
+  maybe_stuck = estimate_if_stuck(telemetry);
 
   // steering calculations
+  calc_direction(telemetry);
   turn = telemetry.mc_angle - 90;
   steering = 2 * int(turn);
 
@@ -139,16 +147,29 @@ drive_cmd_t& Driver::drive(bc_telemetry_packet_t& telemetry) {
   front_fact = (telemetry.ir_front - 25);
   front_fact *= 0.01; // correct speed by front distance
   front_fact = front_fact.clamp(FRONT_MIN_FACT, VAL_1_0);
-  angle_fact = (30 - turn.absolute()) * VAL_1_DIV_45; // correct speed by turn angle
+
+  angle_fact = (45 - turn.absolute()) * VAL_1_DIV_45; // correct speed by turn angle
   angle_fact = angle_fact.clamp(ANGLE_MIN_FACT, VAL_1_0);
+
   speed_add = fixed(max_forward_pwm - DRIVING_NORMAL_FORWARD);
   speed_add = angle_fact * (front_fact * speed_add);
 
+  // state machine
   switch (state) {
     case STATE_NORMAL:
-      drive_cmd.steering_pwm = STEERING_NEUTRAL;// - steering;
-      //drive_cmd.driving_pwm = DRIVING_NORMAL_FORWARD + int(speed_add);
-      driving_pwm += pid.update(0.5 - telemetry.accel_x, telemetry.accel_x);
+      drive_cmd.steering_pwm = STEERING_NEUTRAL - steering;
+      //driving_pwm = DRIVING_NORMAL_FORWARD + int(speed_add);
+
+      clamp_forward_min = DRIVING_MIN_ALLOWED_FORWARD;
+      clamp_forward_max = DRIVING_MIN_ALLOWED_FORWARD + int(speed_add);
+      driving_pwm += pid.update(accel_setpoint - telemetry.accel_x, telemetry.accel_x);
+      if (driving_pwm < clamp_forward_min)
+      {
+        driving_pwm = clamp_forward_min;
+      } else if (driving_pwm > clamp_forward_max) {
+        driving_pwm = clamp_forward_max;
+      }
+
       drive_cmd.driving_pwm = driving_pwm;
 
       /*
@@ -163,8 +184,8 @@ drive_cmd_t& Driver::drive(bc_telemetry_packet_t& telemetry) {
        }
        */
 
-      /*
       // for abrupt lowering of speed go to braking state
+      /*
       if (last_speed_add - speed_add > BRAKING_THRES) {
         stuck_timer.stop();
         last_speed_add = speed_add;
@@ -173,51 +194,51 @@ drive_cmd_t& Driver::drive(bc_telemetry_packet_t& telemetry) {
         break;
       }
       last_speed_add = speed_add;
+      */
 
       // stuck countdown
-      if (maybe_stuck) {
-        if (stuck_timer.start_or_triggered(telemetry.time, 1000, true, false)) {
-          state = STATE_BACKING;
-        }
+      if (maybe_stuck && stuck_timer.start_or_triggered(telemetry.time, 1000, true, false)) {
+        state = STATE_BACKING;
       }
       else {
         stuck_timer.stop();
       }
-      */
+
       break;
 
     case STATE_BACKING:
-      drive_cmd.steering_pwm = 90 + steering;
+      drive_cmd.steering_pwm = STEERING_NEUTRAL + steering;
       drive_cmd.driving_pwm = DRIVING_NORMAL_BACKWARD;
 
       if (/*!maybe_stuck ||*/stuck_timer.start_or_triggered(telemetry.time, 500, true, false)) {
+        sl = sfl = sf = sfr = sr = ssum = 0;
         //state = STATE_BREAKOUT;
         state = STATE_NORMAL;
       }
       break;
 
-      /*
-       case STATE_BREAKOUT:
-       drive_cmd.steering_pwm = 90 - steering;
-       drive_cmd.driving_pwm = BREAKOUT_FORWARD;
+    /*
+     case STATE_BREAKOUT:
+     drive_cmd.steering_pwm = STEERING_NEUTRAL - steering;
+     drive_cmd.driving_pwm = BREAKOUT_FORWARD;
 
-       if (!stuck_timer.running()) {
-       stuck_timer.start(telemetry.time, 1000);
-       }
-       if (!maybe_stuck) {
-       stuck_timer.stop();
-       breakout_timer.start(telemetry.time, 200);
-       state = STATE_NORMAL;
-       }
-       else if (stuck_timer.triggered(telemetry.time)) {
-       stuck_timer.stop();
-       state = STATE_BACKING;
-       }
-       break;
-       */
+     if (!stuck_timer.running()) {
+     stuck_timer.start(telemetry.time, 1000);
+     }
+     if (!maybe_stuck) {
+     stuck_timer.stop();
+     breakout_timer.start(telemetry.time, 200);
+     state = STATE_NORMAL;
+     }
+     else if (stuck_timer.triggered(telemetry.time)) {
+     stuck_timer.stop();
+     state = STATE_BACKING;
+     }
+     break;
+     */
 
     case STATE_BRAKING:
-      drive_cmd.steering_pwm = 90 - steering;
+      drive_cmd.steering_pwm = STEERING_NEUTRAL - steering;
       drive_cmd.driving_pwm = DRIVING_NORMAL_BACKWARD;
 
       if (stuck_timer.start_or_triggered(telemetry.time, 200, true, false)) {

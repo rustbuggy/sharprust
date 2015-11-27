@@ -33,9 +33,14 @@ private:
   uint32_t sl, sfl, sf, sfr, sr, ssum;
   fixed lm, flm, fm, frm, rm, inv_msum;
 
+  float accel_setpoint;
   PID pid;
   float driving_pwm;
+  uint8_t clamp_forward_max, clamp_forward_min;
 
+  bool right_default;
+
+  bool estimate_if_stuck(bc_telemetry_packet_t& telemetry);
   void calc_direction(bc_telemetry_packet_t& telemetry);
   void clamp_steering_and_speed();
 

@@ -3,15 +3,16 @@
 
 #include "types.h"
 
-#define STEERING_MIN                    30
+#define STEERING_MIN                    10
 #define STEERING_NEUTRAL                80
-#define STEERING_MAX                    130
+#define STEERING_MAX                    150
 
 #define DRIVING_STOP                    90
-#define DRIVING_NORMAL_FORWARD          110
-#define DRIVING_MAX_FORWARD             112
-#define DRIVING_BREAKOUT_FORWARD        115
-#define DRIVING_MAX_ALLOWED_FORWARD     115
+#define DRIVING_NORMAL_FORWARD          104
+#define DRIVING_MAX_FORWARD             116
+#define DRIVING_BREAKOUT_FORWARD        DRIVING_MAX_FORWARD
+#define DRIVING_MIN_ALLOWED_FORWARD     100
+#define DRIVING_MAX_ALLOWED_FORWARD     110
 
 #define DRIVING_NORMAL_BACKWARD         40
 #define DRIVING_MIN_ALLOWED_BACKWARD    40
@@ -26,6 +27,7 @@ typedef struct __attribute__((packed)) bc_telemetry_packet_t {
 public:
   uint8_t header; // BC_TELEMETRY
   uint32_t time;
+  uint32_t cycles;
   fixed ir_left;
   fixed ir_right;
   fixed ir_front_left;
@@ -38,6 +40,9 @@ public:
   float accel_x;
   float accel_y;
   float accel_z;
+  float speed_x;
+  float speed_y;
+  float speed_z;
 
   uint8_t automatic;
   uint8_t steering_pwm;
@@ -48,6 +53,7 @@ public:
   bc_telemetry_packet_t() {
     header = BC_TELEMETRY;
     time = 0;
+    cycles = 0;
     ir_left = 0;
     ir_right = 0;
     ir_front_left = 0;
@@ -59,6 +65,9 @@ public:
     accel_x = 0.0f;
     accel_y = 0.0f;
     accel_z = 0.0f;
+    speed_x = 0.0f;
+    speed_y = 0.0f;
+    speed_z = 0.0f;
 
     automatic = 0; // false
     steering_pwm = STEERING_NEUTRAL;

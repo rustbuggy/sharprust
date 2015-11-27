@@ -84,7 +84,7 @@ RTVector3& Accel::getRealAccel(uint32_t time)
     rotatedGravity = fusedConjugate * qTemp;
 
     // currTime adjust the measured Accel and change the signs to make sense
-    realAccel.setX(-(imuData.accel.x() - rotatedGravity.x()));
+    realAccel.setX((imuData.accel.x() - rotatedGravity.x()));
     realAccel.setY(-(imuData.accel.y() - rotatedGravity.y()));
     realAccel.setZ(-(imuData.accel.z() - rotatedGravity.z()));
 

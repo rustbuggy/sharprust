@@ -3,19 +3,19 @@
 
 #include "types.h"
 
-#define STEERING_MIN                    10
-#define STEERING_NEUTRAL                80
+#define STEERING_MIN                    30
+#define STEERING_NEUTRAL                90
 #define STEERING_MAX                    150
 
 #define DRIVING_STOP                    90
-#define DRIVING_NORMAL_FORWARD          104
-#define DRIVING_MAX_FORWARD             116
+#define DRIVING_NORMAL_FORWARD          100
+#define DRIVING_MAX_FORWARD             120
 #define DRIVING_BREAKOUT_FORWARD        DRIVING_MAX_FORWARD
 #define DRIVING_MIN_ALLOWED_FORWARD     100
-#define DRIVING_MAX_ALLOWED_FORWARD     110
+#define DRIVING_MAX_ALLOWED_FORWARD     106
 
 #define DRIVING_NORMAL_BACKWARD         40
-#define DRIVING_MIN_ALLOWED_BACKWARD    40
+#define DRIVING_MAX_ALLOWED_BACKWARD    40
 
 // bc means from Buggy to Computer
 // cb means from Computer to Buggy

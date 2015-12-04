@@ -14,10 +14,7 @@ void button_service() {
   }
 }
 
-Buggy::Buggy() : setup_time(0),
-  read_ind(WINDOW_SIZE - 1),
-  /*sharp_left(IR_LEFT), sharp_right(IR_RIGHT), sharp_front_left(IR_FRONT_LEFT), sharp_front_right(IR_FRONT_RIGHT), sharp_front(IR_FRONT), */
-  steering_pwm(STEERING_NEUTRAL), driving_pwm(DRIVING_STOP), led_state(true) {
+Buggy::Buggy() : setup_time(0), read_ind(WINDOW_SIZE - 1), steering_pwm(STEERING_NEUTRAL), driving_pwm(DRIVING_STOP), led_state(true) {
 }
 
 Buggy::~Buggy() {
@@ -37,8 +34,8 @@ void Buggy::clamp_steering_and_speed(drive_cmd_t& cmd) {
   if (cmd.driving_pwm > DRIVING_MAX_ALLOWED_FORWARD) {
     cmd.driving_pwm = DRIVING_MAX_ALLOWED_FORWARD;
   }
-  else if (cmd.driving_pwm < DRIVING_MIN_ALLOWED_BACKWARD) {
-    cmd.driving_pwm = DRIVING_MIN_ALLOWED_BACKWARD;
+  else if (cmd.driving_pwm < DRIVING_MAX_ALLOWED_BACKWARD) {
+    cmd.driving_pwm = DRIVING_MAX_ALLOWED_BACKWARD;
   }
 }
 
@@ -56,7 +53,6 @@ void Buggy::setup() {
   pinMode(BATTERY, INPUT);
 
   adc = new ADC(); // adc object
-
   adc->setSamplingSpeed(ADC_MED_SPEED); // change the sampling speed
   adc->setConversionSpeed(ADC_MED_SPEED); // change the conversion speed
   adc->setResolution(10);
@@ -113,12 +109,6 @@ void Buggy::sense(bc_telemetry_packet_t& telemetry) {
   telemetry.speed_x += (a.x() * 9.8322) * time_diff;
   telemetry.speed_y += (a.y() * 9.8322) * time_diff;
   telemetry.speed_z += (a.z() * 9.8322) * time_diff;
-
-  //telemetry.ir_left = sharp_left.distance();
-  //telemetry.ir_right = sharp_right.distance();
-  //telemetry.ir_front_left = sharp_front_left.distance();
-  //telemetry.ir_front_right = sharp_front_right.distance();
-  //telemetry.ir_front = sharp_front.distance();
 
   //if (ir_check_timer.start_or_triggered(telemetry.time, 20, false, true))
   {

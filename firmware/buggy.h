@@ -18,7 +18,7 @@
 #define AUTO_BLINK_INTERVAL_MS          125
 
 #define WINDOW_SIZE         4
-#define INFINITY_VARIANCE   fixed(49)
+#define INFINITY_VARIANCE   fixed(25)
 #define INFINITY_DISTANCE   fixed(100)
 
 class Buggy {
@@ -26,15 +26,6 @@ private:
   uint32_t setup_time;
 
   ADC* adc;
-
-  /*
-  IRSharp sharp_left;
-  IRSharp sharp_right;
-  IRSharp sharp_front_left;
-  IRSharp sharp_front_right;
-  IRSharp sharp_front;
-  */
-
   Accel accel;
 
   uint8_t read_ind;

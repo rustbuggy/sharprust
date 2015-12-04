@@ -133,6 +133,17 @@ void Driver::calc_direction(bc_telemetry_packet_t& telemetry) {
   telemetry.mc_angle = telemetry.mc.get_deg_angle();
 }
 
+inline uint8_t Driver::clamp_steering_pwm(int32_t steer) {
+  if (steer < STEERING_MIN)
+  {
+    return STEERING_MIN;
+  } else if (steer > STEERING_MAX) {
+    return STEERING_MAX;
+  } else {
+    return steer;
+  }
+}
+
 drive_cmd_t& Driver::drive(bc_telemetry_packet_t& telemetry) {
   fixed turn, speed_add, front_fact, angle_fact, steering_fact;
 
@@ -157,11 +168,11 @@ drive_cmd_t& Driver::drive(bc_telemetry_packet_t& telemetry) {
   // state machine
   switch (state) {
     case STATE_NORMAL:
-      drive_cmd.steering_pwm = STEERING_NEUTRAL - steering;
+      drive_cmd.steering_pwm = clamp_steering_pwm(STEERING_NEUTRAL - steering);
       //driving_pwm = DRIVING_NORMAL_FORWARD + int(speed_add);
 
       clamp_forward_min = DRIVING_MIN_ALLOWED_FORWARD;
-      clamp_forward_max = DRIVING_MIN_ALLOWED_FORWARD + int(speed_add);
+      clamp_forward_max = DRIVING_NORMAL_FORWARD + int(speed_add);
       driving_pwm += pid.update(accel_setpoint - telemetry.accel_x, telemetry.accel_x);
       if (driving_pwm < clamp_forward_min)
       {
@@ -207,7 +218,7 @@ drive_cmd_t& Driver::drive(bc_telemetry_packet_t& telemetry) {
       break;
 
     case STATE_BACKING:
-      drive_cmd.steering_pwm = STEERING_NEUTRAL + steering;
+      drive_cmd.steering_pwm = clamp_steering_pwm(STEERING_NEUTRAL + steering);
       drive_cmd.driving_pwm = DRIVING_NORMAL_BACKWARD;
 
       if (/*!maybe_stuck ||*/stuck_timer.start_or_triggered(telemetry.time, 500, true, false)) {
@@ -219,7 +230,7 @@ drive_cmd_t& Driver::drive(bc_telemetry_packet_t& telemetry) {
 
     /*
      case STATE_BREAKOUT:
-     drive_cmd.steering_pwm = STEERING_NEUTRAL - steering;
+     drive_cmd.steering_pwm = clamp_steering_pwm(STEERING_NEUTRAL - steering);
      drive_cmd.driving_pwm = BREAKOUT_FORWARD;
 
      if (!stuck_timer.running()) {
@@ -238,7 +249,7 @@ drive_cmd_t& Driver::drive(bc_telemetry_packet_t& telemetry) {
      */
 
     case STATE_BRAKING:
-      drive_cmd.steering_pwm = STEERING_NEUTRAL - steering;
+      drive_cmd.steering_pwm = clamp_steering_pwm(STEERING_NEUTRAL - steering);
       drive_cmd.driving_pwm = DRIVING_NORMAL_BACKWARD;
 
       if (stuck_timer.start_or_triggered(telemetry.time, 200, true, false)) {

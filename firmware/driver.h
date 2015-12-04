@@ -42,7 +42,7 @@ private:
 
   bool estimate_if_stuck(bc_telemetry_packet_t& telemetry);
   void calc_direction(bc_telemetry_packet_t& telemetry);
-  void clamp_steering_and_speed();
+  inline uint8_t clamp_steering_pwm(int32_t steer);
 
 public:
   drive_cmd_t drive_cmd;

@@ -46,3 +46,4 @@ drive_cmd_t& Communicator::read_command(bc_telemetry_packet_t& telemetry) {
 
   return drive_cmd;
 }
+

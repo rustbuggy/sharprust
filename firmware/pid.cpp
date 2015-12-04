@@ -12,7 +12,7 @@ void PID::reset() {
   iState = 0.0f;
   iMax = 1.0f;
   iMin = -1.0f;
-  pGain = 0.1f;
+  pGain = 0.2f;
   iGain = 0.001f;
   dGain = 0.0f;
   firstUpdate = true;

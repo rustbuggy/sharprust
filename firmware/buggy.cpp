@@ -164,10 +164,12 @@ void Buggy::act(bc_telemetry_packet_t& telemetry) {
       steering_pwm = telemetry.steering_pwm;
       steeringservo.write(steering_pwm);
     }
+    //if (speed_change_timer.start_or_triggered(telemetry.time, 20, false, true)) {
     if (driving_pwm != telemetry.driving_pwm) {
       driving_pwm = telemetry.driving_pwm;
       drivingservo.write(driving_pwm);
     }
+    //}
   }
 
   if (telemetry.automatic) {

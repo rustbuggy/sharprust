@@ -41,11 +41,12 @@ private:
 
   timer ir_check_timer;
   timer battery_check_timer;
-
-  timer blink_timer;
-  bool led_state;
-
   timer countdown_timer;
+  timer blink_timer;
+
+  timer speed_change_timer;
+
+  bool led_state;
 
   uint16_t battery_voltage();
   void auto_mode_blink(uint32_t time);

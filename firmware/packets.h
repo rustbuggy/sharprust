@@ -8,14 +8,15 @@
 #define STEERING_MAX                    150
 
 #define DRIVING_STOP                    90
-#define DRIVING_NORMAL_FORWARD          100
-#define DRIVING_MAX_FORWARD             120
-#define DRIVING_BREAKOUT_FORWARD        DRIVING_MAX_FORWARD
-#define DRIVING_MIN_ALLOWED_FORWARD     100
-#define DRIVING_MAX_ALLOWED_FORWARD     106
+#define DRIVING_NORMAL_FORWARD          105//100
+#define DRIVING_MAX_NORMAL_FORWARD      111//106
+#define DRIVING_MAX_FORWARD             125//120
+#define DRIVING_BREAKOUT_FORWARD        115//110
+#define DRIVING_MIN_ALLOWED_FORWARD     105//100
+#define DRIVING_MAX_ALLOWED_FORWARD     DRIVING_BREAKOUT_FORWARD
 
-#define DRIVING_NORMAL_BACKWARD         40
-#define DRIVING_MAX_ALLOWED_BACKWARD    40
+#define DRIVING_NORMAL_BACKWARD         30
+#define DRIVING_MAX_ALLOWED_BACKWARD    30
 
 // bc means from Buggy to Computer
 // cb means from Computer to Buggy
@@ -49,6 +50,7 @@ public:
   uint8_t driving_pwm;
 
   uint16_t battery;
+  uint8_t state;
 
   bc_telemetry_packet_t() {
     header = BC_TELEMETRY;
@@ -74,6 +76,7 @@ public:
     driving_pwm = DRIVING_STOP;
 
     battery = 0;
+    state = 0;
   }
 } bc_telemetry_packet_t;
 

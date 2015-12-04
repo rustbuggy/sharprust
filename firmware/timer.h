@@ -5,66 +5,73 @@
 #define ONE_SHOT 0xFFFFFFFF
 
 class timer {
-private:
-  uint32_t timeout;
-  uint32_t trig_time;
+  private:
+    uint32_t timeout;
+    uint32_t trig_time;
 
-public:
-  timer() :
+  public:
+    timer() :
       timeout(ONE_SHOT), trig_time(NON_ACTIVE) {
-  }
-
-  inline bool running() {
-    return trig_time != NON_ACTIVE;
-  }
-
-  bool start(uint32_t time, uint32_t timeout, bool one_shot) {
-    if (!running()) {
-      if (one_shot) {
-        this->timeout = ONE_SHOT;
-      }
-      else {
-        this->timeout = timeout;
-      }
-      trig_time = time + timeout;
-      return true;
     }
-    else {
-      return false;
-    }
-  }
 
-  bool triggered(uint32_t time) {
-    if (time > trig_time) {
-      if (timeout == ONE_SHOT) {
-        trig_time = NON_ACTIVE;
-      }
-      else {
+    inline bool running() {
+      return trig_time != NON_ACTIVE;
+    }
+
+    bool start(uint32_t time, uint32_t timeout, bool one_shot) {
+      if (!running()) {
+        if (one_shot) {
+          this->timeout = ONE_SHOT;
+        }
+        else {
+          this->timeout = timeout;
+        }
         trig_time = time + timeout;
+        return true;
       }
-      return true;
+      else {
+        return false;
+      }
     }
-    else {
-      return false;
-    }
-  }
 
-  bool start_or_triggered(uint32_t time, uint32_t timeout, bool one_shot, bool start_triggered) {
-    if (start(time, timeout, one_shot)) {
-      return start_triggered;
+    bool triggered(uint32_t time) {
+      if (time > trig_time) {
+        if (timeout == ONE_SHOT) {
+          trig_time = NON_ACTIVE;
+        }
+        else {
+          trig_time = time + timeout;
+        }
+        return true;
+      }
+      else {
+        return false;
+      }
     }
-    else if (triggered(time)) {
-      return true;
-    }
-    else {
-      return false;
-    }
-  }
 
-  void stop() {
-    timeout = ONE_SHOT;
-    trig_time = NON_ACTIVE;
-  }
+    bool start_or_triggered(uint32_t time, uint32_t timeout, bool one_shot, bool start_triggered) {
+      if (start(time, timeout, one_shot)) {
+        return start_triggered;
+      }
+      else if (triggered(time)) {
+        return true;
+      }
+      else {
+        return false;
+      }
+    }
+
+    void stop() {
+      timeout = ONE_SHOT;
+      trig_time = NON_ACTIVE;
+    }
+
+    uint32_t til_trigger(uint32_t time) {
+      if (trig_time > time)
+        return trig_time - time;
+      else
+        return 0;
+    }
 
 };
 

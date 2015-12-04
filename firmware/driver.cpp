@@ -5,7 +5,7 @@
 #define STUCK_THRES 5
 #define STUCK_COUNT 1000
 
-#define BRAKING_THRES (DRIVING_MAX_FORWARD - DRIVING_NORMAL_FORWARD) / 3
+#define BRAKING_THRES (DRIVING_MAX_FORWARD - DRIVING_NORMAL_FORWARD) / 3.0f
 
 static const fixed VAL_SQRT_1_DIV_2(0.70710678118654752440084436210485);
 static const fixed VAL_SQRT_3_DIV_2(0.86602540378443864676372317075294);
@@ -51,7 +51,6 @@ void Driver::reset() {
   drive_cmd.driving_pwm = DRIVING_STOP;
 
   steering = 0;
-  last_speed_add = 0;
 
   tl = tfl = tf = tfr = tr = 0;
   sl = sfl = sf = sfr = sr = ssum = 0;
@@ -59,6 +58,7 @@ void Driver::reset() {
   accel_setpoint = 0.1f;
   pid.reset();
   driving_pwm = DRIVING_STOP;
+  last_driving_pwm = DRIVING_STOP;
 }
 
 void Driver::set_max_forward_pwm(uint8_t pwm) {
@@ -83,7 +83,7 @@ bool Driver::estimate_if_stuck(bc_telemetry_packet_t& telemetry) {
   // how many sensors have been near the same value for at least x times
   ssum = (sl > STUCK_COUNT ? 1 : 0) + (sfl > STUCK_COUNT ? 1 : 0) + (sf > STUCK_COUNT ? 1 : 0) + (sfr > STUCK_COUNT ? 1 : 0) + (sr > STUCK_COUNT ? 1 : 0);
 
-  return (ssum > 2);
+  return (ssum > 2) && (telemetry.accel_x * telemetry.accel_x + telemetry.accel_y * telemetry.accel_y + telemetry.accel_z * telemetry.accel_z < 0.0675f);
 }
 
 void Driver::calc_direction(bc_telemetry_packet_t& telemetry) {
@@ -144,8 +144,101 @@ inline uint8_t Driver::clamp_steering_pwm(int32_t steer) {
   }
 }
 
+driver_states_t Driver::normal(bc_telemetry_packet_t& telemetry) {
+  driver_states_t res = STATE_NORMAL;
+
+  clamp_forward_min = DRIVING_MIN_ALLOWED_FORWARD;
+  clamp_forward_max = DRIVING_NORMAL_FORWARD + int(speed_add);
+  if (clamp_forward_max > DRIVING_MAX_NORMAL_FORWARD) {
+    clamp_forward_max = DRIVING_MAX_NORMAL_FORWARD;
+  }
+  driving_pwm += pid.update(accel_setpoint - telemetry.accel_x, telemetry.accel_x);
+  if (driving_pwm < clamp_forward_min)
+  {
+    driving_pwm = clamp_forward_min;
+  } else if (driving_pwm > clamp_forward_max) {
+    driving_pwm = clamp_forward_max;
+  }
+
+  // for abrupt lowering of speed go to braking state
+  if (last_driving_pwm - driving_pwm > BRAKING_THRES) {
+    res = STATE_BRAKING;
+  }
+  last_driving_pwm = driving_pwm;
+
+  // stuck countdown
+  if (maybe_stuck) {
+    if (stuck_timer.start_or_triggered(telemetry.time, 1500, true, false)) {
+      res = STATE_BACKING;
+    }
+  }
+  else {
+    stuck_timer.stop();
+  }
+
+  drive_cmd.steering_pwm = clamp_steering_pwm(STEERING_NEUTRAL - steering);
+  drive_cmd.driving_pwm = driving_pwm;
+
+  return res;
+}
+
+driver_states_t Driver::start_backing(bc_telemetry_packet_t& telemetry) {
+  driver_states_t res = STATE_START_BACKING;
+
+  if (start_backing_timer.start_or_triggered(telemetry.time, 2200, true, false))
+  {
+    res = STATE_BACKING;
+  }
+
+  drive_cmd.steering_pwm = STEERING_NEUTRAL;
+  drive_cmd.driving_pwm = DRIVING_STOP;
+
+  return res;
+}
+
+driver_states_t Driver::backing(bc_telemetry_packet_t& telemetry) {
+  driver_states_t res = STATE_BACKING;
+
+  if (/*!maybe_stuck ||*/ backing_timer.start_or_triggered(telemetry.time, 1000, true, false)) {
+    //sl = sfl = sf = sfr = sr = ssum = 0;
+    res = STATE_BREAKOUT;
+  }
+
+  drive_cmd.steering_pwm = clamp_steering_pwm(STEERING_NEUTRAL + (steering / 2));
+  drive_cmd.driving_pwm = DRIVING_NORMAL_BACKWARD;//DRIVING_NORMAL_BACKWARD + backing_timer.til_trigger(telemetry.time) / 40;
+
+  return res;
+}
+
+driver_states_t Driver::breakout(bc_telemetry_packet_t& telemetry) {
+  driver_states_t res = STATE_BREAKOUT;
+
+  if (breakout_timer.start_or_triggered(telemetry.time, 500, true, false))
+  {
+    res = STATE_NORMAL;
+  }
+
+  drive_cmd.steering_pwm = clamp_steering_pwm(STEERING_NEUTRAL - steering);
+  drive_cmd.driving_pwm = DRIVING_BREAKOUT_FORWARD;
+
+  return res;
+
+}
+driver_states_t Driver::braking(bc_telemetry_packet_t& telemetry) {
+  driver_states_t res = STATE_BRAKING;
+
+  if (braking_timer.start_or_triggered(telemetry.time, 300, true, false)) {
+    res = STATE_NORMAL;
+  }
+
+  drive_cmd.steering_pwm = clamp_steering_pwm(STEERING_NEUTRAL - steering);
+  drive_cmd.driving_pwm = DRIVING_NORMAL_BACKWARD;
+
+  return res;
+}
+
 drive_cmd_t& Driver::drive(bc_telemetry_packet_t& telemetry) {
-  fixed turn, speed_add, front_fact, angle_fact, steering_fact;
+  fixed turn, front_fact, angle_fact, steering_fact;
 
   maybe_stuck = estimate_if_stuck(telemetry);
 
@@ -166,103 +259,39 @@ drive_cmd_t& Driver::drive(bc_telemetry_packet_t& telemetry) {
   speed_add = angle_fact * (front_fact * speed_add);
 
   // state machine
-  switch (state) {
-    case STATE_NORMAL:
-      drive_cmd.steering_pwm = clamp_steering_pwm(STEERING_NEUTRAL - steering);
-      //driving_pwm = DRIVING_NORMAL_FORWARD + int(speed_add);
-
-      clamp_forward_min = DRIVING_MIN_ALLOWED_FORWARD;
-      clamp_forward_max = DRIVING_NORMAL_FORWARD + int(speed_add);
-      driving_pwm += pid.update(accel_setpoint - telemetry.accel_x, telemetry.accel_x);
-      if (driving_pwm < clamp_forward_min)
-      {
-        driving_pwm = clamp_forward_min;
-      } else if (driving_pwm > clamp_forward_max) {
-        driving_pwm = clamp_forward_max;
-      }
-
-      drive_cmd.driving_pwm = driving_pwm;
-
-      /*
-       if (breakout_timer.running()) {
-       drive_cmd.driving_pwm = BREAKOUT_FORWARD;
-       if (breakout_timer.triggered(telemetry.time)) {
-       breakout_timer.stop();
-       }
-       }
-       else {
-       drive_cmd.driving_pwm = NORMAL_FORWARD + int(speed_add);
-       }
-       */
-
-      // for abrupt lowering of speed go to braking state
-      /*
-      if (last_speed_add - speed_add > BRAKING_THRES) {
-        stuck_timer.stop();
-        last_speed_add = speed_add;
-        drive_cmd.driving_pwm = DRIVING_MIN_ALLOWED_BACKWARD;
-        state = STATE_BRAKING;
+  do {
+    last_state = state;
+    switch (state) {
+      case STATE_NORMAL:
+        state = normal(telemetry);
         break;
-      }
-      last_speed_add = speed_add;
-      */
-
-      // stuck countdown
-      if (maybe_stuck && stuck_timer.start_or_triggered(telemetry.time, 1000, true, false)) {
-        state = STATE_BACKING;
-      }
-      else {
-        stuck_timer.stop();
-      }
-
-      break;
-
-    case STATE_BACKING:
-      drive_cmd.steering_pwm = clamp_steering_pwm(STEERING_NEUTRAL + steering);
-      drive_cmd.driving_pwm = DRIVING_NORMAL_BACKWARD;
-
-      if (/*!maybe_stuck ||*/stuck_timer.start_or_triggered(telemetry.time, 500, true, false)) {
-        sl = sfl = sf = sfr = sr = ssum = 0;
-        //state = STATE_BREAKOUT;
+      case STATE_START_BACKING:
+        state = start_backing(telemetry);
+        break;
+      case STATE_BACKING:
+        state = backing(telemetry);
+        break;
+      case STATE_BREAKOUT:
+        state = breakout(telemetry);
+        break;
+      case STATE_BRAKING:
+        state = braking(telemetry);
+        break;
+      case STATE_IDLE:
+        state = STATE_BREAKOUT;
+        break;
+      default:
         state = STATE_NORMAL;
-      }
-      break;
+        break;
+    }
 
-    /*
-     case STATE_BREAKOUT:
-     drive_cmd.steering_pwm = clamp_steering_pwm(STEERING_NEUTRAL - steering);
-     drive_cmd.driving_pwm = BREAKOUT_FORWARD;
+    if ((last_state != state) && (state == STATE_NORMAL))
+    {
+      pid.reset();
+    }
+  } while (state != last_state);
 
-     if (!stuck_timer.running()) {
-     stuck_timer.start(telemetry.time, 1000);
-     }
-     if (!maybe_stuck) {
-     stuck_timer.stop();
-     breakout_timer.start(telemetry.time, 200);
-     state = STATE_NORMAL;
-     }
-     else if (stuck_timer.triggered(telemetry.time)) {
-     stuck_timer.stop();
-     state = STATE_BACKING;
-     }
-     break;
-     */
-
-    case STATE_BRAKING:
-      drive_cmd.steering_pwm = clamp_steering_pwm(STEERING_NEUTRAL - steering);
-      drive_cmd.driving_pwm = DRIVING_NORMAL_BACKWARD;
-
-      if (stuck_timer.start_or_triggered(telemetry.time, 200, true, false)) {
-        state = STATE_NORMAL;
-      }
-      break;
-
-    case STATE_IDLE:
-    default:
-      //breakout_timer.start(telemetry.time, 400);
-      state = STATE_NORMAL;
-      break;
-  }
+  telemetry.state = state;
 
   Buggy::clamp_steering_and_speed(drive_cmd);
 

@@ -1,4 +1,5 @@
-sharprust
-=========
+## sharprust
+With Sharp sensors
 
-Test platform with Sharp sensors
+## install
+Use Teensyduino for building https://www.pjrc.com/teensy/td_download.html
